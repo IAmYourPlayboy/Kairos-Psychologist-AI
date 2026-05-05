@@ -1,0 +1,172 @@
+/* ==========================================================================
+   ПРАВАЯ ПАНЕЛЬ: профиль, информационные блоки, SOS
+   ========================================================================== */
+
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+    padding: var(--space-5) var(--space-5) var(--space-5);
+    height: 100vh;
+    overflow-y: auto;
+    border-left: 1px solid var(--color-border-soft);
+    background: linear-gradient(180deg,
+        rgba(255, 255, 255, 0.40) 0%,
+        rgba(255, 255, 255, 0.20) 100%);
+}
+
+/* ---------- Кнопка профиля (сверху, выровнена вправо) ---------- */
+.profile-button {
+    align-self: flex-end;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-pill);
+    background: var(--color-bg-elevated);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border-soft);
+    box-shadow: var(--shadow-soft);
+    text-decoration: none;
+    transition:
+        background var(--transition-fast),
+        color var(--transition-fast),
+        transform var(--transition-fast);
+    margin-bottom: var(--space-4);
+}
+
+.profile-button:hover {
+    background: var(--color-accent-soft);
+    color: var(--color-accent);
+}
+
+.profile-button:active {
+    transform: scale(0.95);
+}
+
+/* ---------- Информационные карточки (Совет / Новости) ---------- */
+.info-card {
+    padding: var(--space-4) var(--space-4);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-soft);
+    border: 1px solid transparent;
+}
+
+.info-card__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+}
+
+.info-card__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.info-card__title {
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.info-card__text {
+    font-size: var(--fs-sm);
+    line-height: var(--lh-relaxed);
+}
+
+/* Совет — мягкий горчичный */
+.info-card--tip {
+    background: var(--color-tip-bg);
+    border-color: rgba(217, 119, 6, 0.18);
+}
+.info-card--tip .info-card__dot {
+    background: var(--color-tip-accent);
+}
+.info-card--tip .info-card__title {
+    color: var(--color-tip-accent);
+}
+.info-card--tip .info-card__text {
+    color: var(--color-tip-text);
+}
+
+/* Новости — спокойный синий */
+.info-card--news {
+    background: var(--color-news-bg);
+    border-color: rgba(37, 99, 235, 0.18);
+}
+.info-card--news .info-card__dot {
+    background: var(--color-news-accent);
+}
+.info-card--news .info-card__title {
+    color: var(--color-news-accent);
+}
+.info-card--news .info-card__text {
+    color: var(--color-news-text);
+}
+
+/* ---------- SOS-кнопка (всегда видна, под блоками) ----------
+   Дизайн без стресса: спокойная по умолчанию, акцент проявляется
+   только при ховере. Никакой пульсации, никакой агрессии.
+   В кризис «активируется» сменой цвета на красный — мягко, без анимаций.
+*/
+.sos-button {
+    margin-top: auto;       /* Прижимаем вниз, если есть свободное место */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: var(--space-4) var(--space-4);
+    background: var(--color-bg-elevated);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border-medium);
+    border-radius: var(--radius-lg);
+    font-weight: 500;
+    transition:
+        background var(--transition-base),
+        color var(--transition-base),
+        border-color var(--transition-base),
+        transform var(--transition-fast),
+        box-shadow var(--transition-base);
+}
+
+.sos-button:hover {
+    color: var(--color-crisis);
+    border-color: var(--color-crisis);
+    background: var(--color-crisis-soft);
+}
+
+.sos-button:active {
+    transform: scale(0.98);
+}
+
+.sos-button__label {
+    font-size: var(--fs-md);
+    letter-spacing: 0.06em;
+    font-weight: 600;
+}
+
+.sos-button__hint {
+    font-size: var(--fs-xs);
+    font-weight: 400;
+    opacity: 0.85;
+}
+
+/* В режиме обнаруженного кризиса — окрашивается в красный (без пульсации).
+   Активируется системой когда NLP детектирует кризисный уровень. */
+.sos-button.is-crisis {
+    background: var(--color-crisis);
+    color: var(--color-text-on-accent);
+    border-color: var(--color-crisis);
+}
+
+.sos-button.is-crisis:hover {
+    background: var(--color-crisis-hover);
+    border-color: var(--color-crisis-hover);
+}

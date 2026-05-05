@@ -1,0 +1,184 @@
+/* ==========================================================================
+   ЧАТ: основная область диалога
+   Сообщения + поле ввода
+   ========================================================================== */
+
+.chat {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+}
+
+/* ---------- Лента сообщений ---------- */
+.chat__messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-7) var(--space-8) var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    max-width: 760px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* Скроллбар чата */
+.chat__messages::-webkit-scrollbar {
+    width: 8px;
+}
+.chat__messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+.chat__messages::-webkit-scrollbar-thumb {
+    background: rgba(31, 41, 55, 0.10);
+    border-radius: var(--radius-pill);
+}
+.chat__messages::-webkit-scrollbar-thumb:hover {
+    background: rgba(31, 41, 55, 0.18);
+}
+
+/* ---------- Сообщение ---------- */
+.message {
+    max-width: 78%;
+    padding: var(--space-3) var(--space-5);
+    border-radius: var(--radius-lg);
+    font-size: var(--fs-md);
+    line-height: var(--lh-relaxed);
+    word-wrap: break-word;
+    animation: message-in 220ms ease-out;
+}
+
+.message p + p {
+    margin-top: var(--space-2);
+}
+
+@keyframes message-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Сообщение ассистента (Кайроса): нейтральный фон, слева */
+.message--assistant {
+    align-self: flex-start;
+    background: var(--color-bg-elevated);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-soft);
+    border-bottom-left-radius: var(--radius-sm);
+    box-shadow: var(--shadow-soft);
+}
+
+/* В Лофте — лёгкое тёплое свечение по верхнему краю,
+   будто сообщение освещено лампой сверху-справа */
+[data-theme="loft"] .message--assistant {
+    background:
+        linear-gradient(180deg,
+            rgba(217, 144, 60, 0.04) 0%,
+            transparent 50%),
+        var(--color-bg-elevated);
+}
+
+/* Сообщение пользователя: акцент, справа */
+.message--user {
+    align-self: flex-end;
+    background: var(--color-accent);
+    color: var(--color-text-on-accent);
+    border-bottom-right-radius: var(--radius-sm);
+    box-shadow: var(--shadow-soft);
+}
+
+/* В Лофте сообщения юзера — латунные. Текст на латуни тёмный. */
+[data-theme="loft"] .message--user {
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, 0.08) 0%,
+            transparent 60%),
+        var(--color-accent);
+}
+
+/* ---------- Поле ввода ----------
+   Над полем — мягкая «подложка» цветом фона, чтобы при скролле
+   сообщения красиво растворялись в фоне, а не обрезались резко.
+   Используем тот же color-bg-base, что и в теме — fade в transparent. */
+.chat__input-wrapper {
+    padding: var(--space-4) var(--space-8) var(--space-6);
+    background: linear-gradient(to top,
+        var(--color-bg-base) 0%,
+        var(--color-bg-base) 50%,
+        transparent 100%);
+    pointer-events: none;
+}
+
+.chat__input {
+    pointer-events: auto;
+    max-width: 760px;
+    margin: 0 auto;
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-5);
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border-medium);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-soft);
+    transition:
+        border-color var(--transition-base),
+        box-shadow var(--transition-base);
+}
+
+.chat__input:focus-within {
+    border-color: var(--color-accent);
+    box-shadow:
+        var(--shadow-soft),
+        0 0 0 3px var(--color-accent-soft);
+}
+
+.chat__textarea {
+    flex: 1;
+    resize: none;
+    padding: var(--space-3) 0;
+    font-size: var(--fs-md);
+    line-height: var(--lh-relaxed);
+    color: var(--color-text-primary);
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.chat__textarea::placeholder {
+    color: var(--color-text-tertiary);
+}
+
+.chat__send {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-pill);
+    background: var(--color-accent);
+    color: var(--color-text-on-accent);
+    flex-shrink: 0;
+    transition:
+        background var(--transition-fast),
+        transform var(--transition-fast);
+}
+
+.chat__send:hover {
+    background: var(--color-accent-hover);
+}
+
+.chat__send:active {
+    transform: scale(0.94);
+}
+
+.chat__send:disabled {
+    background: var(--color-text-tertiary);
+    cursor: not-allowed;
+}

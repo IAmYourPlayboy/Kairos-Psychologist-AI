@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="paper">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кайрос — личный кабинет</title>
+
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('kairos.theme');
+                if (saved === 'paper' || saved === 'loft') {
+                    document.documentElement.setAttribute('data-theme', saved);
+                }
+            } catch (e) {}
+        })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="styles/variables.css">
+    <link rel="stylesheet" href="styles/themes.css">
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/pages.css">
+    <link rel="stylesheet" href="styles/profile.css">
+</head>
+<body>
+    <div class="background-wallpaper" aria-hidden="true"></div>
+
+    <div class="page">
+        <!-- ============ ТОПБАР ============ -->
+        <header class="topbar">
+            <a class="topbar__back" href="index.html" aria-label="Вернуться в чат" title="Вернуться в чат">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"/>
+                    <polyline points="12 19 5 12 12 5"/>
+                </svg>
+            </a>
+            <h1 class="topbar__title">Личный кабинет</h1>
+            <div class="topbar__actions">
+                <a class="btn btn--ghost" href="settings.html">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                    Настройки
+                </a>
+            </div>
+        </header>
+
+        <div class="page__body">
+            <!-- ============ БОКОВАЯ НАВИГАЦИЯ ============ -->
+            <nav class="side-nav" aria-label="Разделы профиля">
+                <div class="side-nav__group">
+                    <a class="side-nav__item is-active" href="#summary">
+                        <svg class="side-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                        <span class="side-nav__item-label">Сводка</span>
+                    </a>
+                    <a class="side-nav__item" href="#sessions">
+                        <svg class="side-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        <span class="side-nav__item-label">Сессии</span>
+                    </a>
+                    <a class="side-nav__item" href="#dynamics">
+                        <svg class="side-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 17 9 11 13 15 21 7"/>
+                            <polyline points="14 7 21 7 21 14"/>
+                        </svg>
+                        <span class="side-nav__item-label">Динамика</span>
+                    </a>
+                    <a class="side-nav__item" href="#screenings">
+                        <svg class="side-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 11l3 3L22 4"/>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                        </svg>
+                        <span class="side-nav__item-label">Скрининги</span>
+                    </a>
+                    <a class="side-nav__item" href="#history">
+                        <svg class="side-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        <span class="side-nav__item-label">История чатов</span>
+                    </a>
+                </div>
+
+                <div class="side-nav__group">
+                    <div class="side-nav__heading">Подписка</div>
+                    <a class="side-nav__item" href="#subscription">
+                        <svg class="side-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="5" width="20" height="14" rx="2"/>
+                            <line x1="2" y1="10" x2="22" y2="10"/>
+                        </svg>
+                        <span class="side-nav__item-label">Тариф</span>
+                    </a>
+                </div>
+            </nav>
+
+            <!-- ============ КОНТЕНТ ============ -->
+            <main class="page__content">
+                <div class="page__content-inner">
+
+                    <!-- ===== СВОДКА ===== -->
+                    <section class="section" id="summary">
+                        <div class="profile-hero">
+                            <div class="profile-hero__avatar" aria-hidden="true">К</div>
+                            <div class="profile-hero__info">
+                                <div class="profile-hero__name">Гость</div>
+                                <div class="profile-hero__meta">
+                                    18–25 лет
+                                    <span class="profile-hero__meta-dot">•</span>
+                                    с тобой 47 дней
+                                    <span class="profile-hero__meta-dot">•</span>
+                                    последний разговор сегодня
+                                </div>
+                            </div>
+                            <div class="profile-hero__actions">
+                                <button class="btn btn--secondary" type="button">Редактировать</button>
+                            </div>
+                        </div>
+
+                        <div class="metrics" style="margin-top: var(--space-3);">
+                            <div class="metric">
+                                <div class="metric__value">23</div>
+                                <div class="metric__label">Сессий</div>
+                                <div class="metric__delta">+4 за неделю</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric__value">12 ч</div>
+                                <div class="metric__label">Всего времени</div>
+                                <div class="metric__delta">≈ 31 минута на сессию</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric__value">7</div>
+                                <div class="metric__label">Дней подряд</div>
+                                <div class="metric__delta">текущая серия</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric__value">4</div>
+                                <div class="metric__label">Скрининга</div>
+                                <div class="metric__delta">последний 3 дня назад</div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ===== СЕССИИ ===== -->
+                    <section class="section" id="sessions">
+                        <div class="section__header">
+                            <h2 class="section__title">Сессии</h2>
+                        </div>
+                        <p class="section__hint">
+                            Не оценочно — просто факты. Сколько ты возвращался, в какое время, как долго.
+                        </p>
+
+                        <div class="card card--inset">
+                            <div style="padding: var(--space-5) var(--space-5) var(--space-2);">
+                                <div class="card__title">Активность по неделям</div>
+                                <p class="card__hint" style="margin-top: var(--space-1);">Количество сессий за последние 8 недель</p>
+                            </div>
+
+                            <div class="chart-container">
+                                <!-- SVG-график активности (столбчатый) -->
+                                <svg class="chart" viewBox="0 0 600 200" preserveAspectRatio="none" aria-label="График активности по неделям">
+                                    <!-- Сетка -->
+                                    <g class="chart__grid-group">
+                                        <line class="chart__grid" x1="40" y1="40"  x2="580" y2="40"/>
+                                        <line class="chart__grid" x1="40" y1="90"  x2="580" y2="90"/>
+                                        <line class="chart__grid" x1="40" y1="140" x2="580" y2="140"/>
+                                    </g>
+                                    <!-- Подписи Y -->
+                                    <text class="chart__axis-label" x="32" y="44" text-anchor="end">8</text>
+                                    <text class="chart__axis-label" x="32" y="94" text-anchor="end">4</text>
+                                    <text class="chart__axis-label" x="32" y="172" text-anchor="end">0</text>
+
+                                    <!-- Столбцы (8 недель). Высота: количество сессий × 12.5px. -->
+                                    <!-- 1: 1, 2: 2, 3: 1, 4: 3, 5: 5, 6: 4, 7: 6, 8: 4 -->
+                                    <g fill="var(--color-accent)" opacity="0.85">
+                                        <rect x="60"  y="153" width="40" height="17"  rx="3"/>
+                                        <rect x="125" y="140" width="40" height="30"  rx="3"/>
+                                        <rect x="190" y="153" width="40" height="17"  rx="3"/>
+                                        <rect x="255" y="128" width="40" height="42"  rx="3"/>
+                                        <rect x="320" y="103" width="40" height="67"  rx="3"/>
+                                        <rect x="385" y="115" width="40" height="55"  rx="3"/>
+                                        <rect x="450" y="90"  width="40" height="80"  rx="3"/>
+                                        <rect x="515" y="115" width="40" height="55"  rx="3"/>
+                                    </g>
+
+                                    <!-- Подписи X -->
+                                    <text class="chart__axis-label" x="80"  y="190" text-anchor="middle">8 нед.</text>
+                                    <text class="chart__axis-label" x="145" y="190" text-anchor="middle">7 нед.</text>
+                                    <text class="chart__axis-label" x="210" y="190" text-anchor="middle">6 нед.</text>
+                                    <text class="chart__axis-label" x="275" y="190" text-anchor="middle">5 нед.</text>
+                                    <text class="chart__axis-label" x="340" y="190" text-anchor="middle">4 нед.</text>
+                                    <text class="chart__axis-label" x="405" y="190" text-anchor="middle">3 нед.</text>
+                                    <text class="chart__axis-label" x="470" y="190" text-anchor="middle">2 нед.</text>
+                                    <text class="chart__axis-label" x="535" y="190" text-anchor="middle">сейчас</text>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div class="card card--inset">
+                            <div style="padding: var(--space-5);">
+                                <div class="card__title">Когда ты приходишь</div>
+                                <p class="card__hint" style="margin-top: var(--space-1);">
+                                    Часто ночью — это нормально. Многим становится тяжелее именно тогда.
+                                </p>
+                            </div>
+                            <!-- Распределение по часам -->
+                            <div class="chart-container">
+                                <svg class="chart" viewBox="0 0 600 160" preserveAspectRatio="none" aria-label="Распределение по часам суток">
+                                    <line class="chart__grid" x1="0" y1="120" x2="600" y2="120"/>
+                                    <!-- 24 часа, нерегулярные высоты (имитация ночной активности) -->
+                                    <g fill="var(--color-accent)" opacity="0.7">
+                                        <rect x="10"  y="105" width="20" height="15" rx="2"/>
+                                        <rect x="35"  y="90"  width="20" height="30" rx="2"/>
+                                        <rect x="60"  y="80"  width="20" height="40" rx="2"/>
+                                        <rect x="85"  y="70"  width="20" height="50" rx="2"/>
+                                        <rect x="110" y="65"  width="20" height="55" rx="2"/>
+                                        <rect x="135" y="100" width="20" height="20" rx="2"/>
+                                        <rect x="160" y="115" width="20" height="5"  rx="2"/>
+                                        <rect x="185" y="115" width="20" height="5"  rx="2"/>
+                                        <rect x="210" y="110" width="20" height="10" rx="2"/>
+                                        <rect x="235" y="105" width="20" height="15" rx="2"/>
+                                        <rect x="260" y="100" width="20" height="20" rx="2"/>
+                                        <rect x="285" y="105" width="20" height="15" rx="2"/>
+                                        <rect x="310" y="100" width="20" height="20" rx="2"/>
+                                        <rect x="335" y="95"  width="20" height="25" rx="2"/>
+                                        <rect x="360" y="90"  width="20" height="30" rx="2"/>
+                                        <rect x="385" y="85"  width="20" height="35" rx="2"/>
+                                        <rect x="410" y="75"  width="20" height="45" rx="2"/>
+                                        <rect x="435" y="65"  width="20" height="55" rx="2"/>
+                                        <rect x="460" y="55"  width="20" height="65" rx="2"/>
+                                        <rect x="485" y="50"  width="20" height="70" rx="2"/>
+                                        <rect x="510" y="55"  width="20" height="65" rx="2"/>
+                                        <rect x="535" y="70"  width="20" height="50" rx="2"/>
+                                        <rect x="560" y="90"  width="20" height="30" rx="2"/>
+                                        <rect x="585" y="100" width="15" height="20" rx="2"/>
+                                    </g>
+                                    <text class="chart__axis-label" x="20"  y="148">00</text>
+                                    <text class="chart__axis-label" x="170" y="148">06</text>
+                                    <text class="chart__axis-label" x="320" y="148">12</text>
+                                    <text class="chart__axis-label" x="470" y="148">18</text>
+                                    <text class="chart__axis-label" x="585" y="148">24</text>
+                                </svg>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ===== ДИНАМИКА ===== -->
+                    <section class="section" id="dynamics">
+                        <div class="section__header">
+                            <h2 class="section__title">Динамика</h2>
+                        </div>
+                        <p class="section__hint">
+                            Здесь не ставятся оценки. Никаких «лучше» или «хуже» — просто как менялось то, о чём ты говоришь.
+                            Иногда волны идут вверх, иногда вниз. И это нормально.
+                        </p>
+
+                        <div class="card card--inset">
+                            <div style="padding: var(--space-5);">
+                                <div class="card__title">Эмоциональный фон</div>
+                                <p class="card__hint" style="margin-top: var(--space-1);">
+                                    На основе того, как ты пишешь. Усреднено по неделям.
+                                </p>
+                            </div>
+
+                            <div class="chart-container">
+                                <!-- Линейный график (8 недель) -->
+                                <!-- Ось X: 0 .. 600, ось Y: 200..20 (инвертирована) -->
+                                <!-- Точки: 8 недель, значения 0..1 (где 0 = тише, 1 = громче) -->
+                                <!-- Координаты: y = 180 - value * 140 -->
+                                <!-- Значения: 0.7, 0.8, 0.65, 0.6, 0.55, 0.5, 0.4, 0.45 -->
+                                <!-- y:        82,  68,   89,   96,   103,  110, 124, 117 -->
+                                <svg class="chart" viewBox="0 0 600 200" preserveAspectRatio="none" aria-label="График эмоционального фона по неделям">
+                                    <line class="chart__grid" x1="40" y1="40"  x2="580" y2="40"/>
+                                    <line class="chart__grid" x1="40" y1="110" x2="580" y2="110"/>
+                                    <line class="chart__grid" x1="40" y1="180" x2="580" y2="180"/>
+
+                                    <text class="chart__axis-label" x="32" y="44"  text-anchor="end">громче</text>
+                                    <text class="chart__axis-label" x="32" y="114" text-anchor="end">средне</text>
+                                    <text class="chart__axis-label" x="32" y="184" text-anchor="end">тише</text>
+
+                                    <!-- Заливка под линией -->
+                                    <path class="chart__area" d="
+                                        M 80,82
+                                        L 145,68
+                                        L 210,89
+                                        L 275,96
+                                        L 340,103
+                                        L 405,110
+                                        L 470,124
+                                        L 535,117
+                                        L 535,180
+                                        L 80,180
+                                        Z"/>
+
+                                    <!-- Сама линия -->
+                                    <path class="chart__line" d="
+                                        M 80,82
+                                        L 145,68
+                                        L 210,89
+                                        L 275,96
+                                        L 340,103
+                                        L 405,110
+                                        L 470,124
+                                        L 535,117"/>
+
+                                    <!-- Точки -->
+                                    <circle class="chart__dot" cx="80"  cy="82"  r="4"/>
+                                    <circle class="chart__dot" cx="145" cy="68"  r="4"/>
+                                    <circle class="chart__dot" cx="210" cy="89"  r="4"/>
+                                    <circle class="chart__dot" cx="275" cy="96"  r="4"/>
+                                    <circle class="chart__dot" cx="340" cy="103" r="4"/>
+                                    <circle class="chart__dot" cx="405" cy="110" r="4"/>
+                                    <circle class="chart__dot" cx="470" cy="124" r="4"/>
+                                    <circle class="chart__dot" cx="535" cy="117" r="4"/>
+
+                                    <text class="chart__axis-label" x="80"  y="200" text-anchor="middle">8 нед.</text>
+                                    <text class="chart__axis-label" x="535" y="200" text-anchor="middle">сейчас</text>
+                                </svg>
+                            </div>
+
+                            <div class="chart-legend">
+                                <div class="chart-legend__item">
+                                    <span class="chart-legend__swatch" style="background: var(--color-accent);"></span>
+                                    Усреднённый фон
+                                </div>
+                                <div class="chart-legend__item">
+                                    «громче» — больше тревоги, дистресса, остроты
+                                </div>
+                                <div class="chart-legend__item">
+                                    «тише» — спокойнее, размереннее
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card card--inset">
+                            <div style="padding: var(--space-5);">
+                                <div class="card__title">Темы, к которым ты возвращаешься</div>
+                                <p class="card__hint" style="margin-top: var(--space-1);">
+                                    Что чаще всего звучит в твоих разговорах. Это не диагноз — просто то, что ты приносишь.
+                                </p>
+                            </div>
+                            <div class="tags">
+                                <span class="tag">тревога <span class="tag__count">14</span></span>
+                                <span class="tag">работа <span class="tag__count">11</span></span>
+                                <span class="tag">сон <span class="tag__count">8</span></span>
+                                <span class="tag">отношения <span class="tag__count">7</span></span>
+                                <span class="tag">одиночество <span class="tag__count">5</span></span>
+                                <span class="tag">прошлое <span class="tag__count">4</span></span>
+                                <span class="tag">смысл <span class="tag__count">3</span></span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ===== СКРИНИНГИ ===== -->
+                    <section class="section" id="screenings">
+                        <div class="section__header">
+                            <h2 class="section__title">Скрининги</h2>
+                        </div>
+                        <p class="section__hint">
+                            Короткие опросники, которые помогают увидеть состояние объективно.
+                            Балл — это не приговор, это просто число для разговора с собой или специалистом.
+                        </p>
+
+                        <div class="card card--inset">
+                            <div class="screening-list">
+                                <div class="screening-item">
+                                    <div class="screening-item__badge">PHQ</div>
+                                    <div class="screening-item__info">
+                                        <div class="screening-item__name">PHQ-9 — настроение и интерес</div>
+                                        <div class="screening-item__hint">пройден 3 дня назад · до этого 3 раза</div>
+                                    </div>
+                                    <div class="screening-item__score screening-item__score--medium">
+                                        <div class="screening-item__score-value">12 / 27</div>
+                                        <div class="screening-item__score-hint">умеренно</div>
+                                    </div>
+                                    <div class="screening-item__action">
+                                        <button class="btn btn--secondary" type="button">Пройти заново</button>
+                                    </div>
+                                </div>
+                                <div class="screening-item">
+                                    <div class="screening-item__badge">GAD</div>
+                                    <div class="screening-item__info">
+                                        <div class="screening-item__name">GAD-7 — тревожность</div>
+                                        <div class="screening-item__hint">пройден 5 дней назад · до этого 2 раза</div>
+                                    </div>
+                                    <div class="screening-item__score screening-item__score--high">
+                                        <div class="screening-item__score-value">14 / 21</div>
+                                        <div class="screening-item__score-hint">выраженно</div>
+                                    </div>
+                                    <div class="screening-item__action">
+                                        <button class="btn btn--secondary" type="button">Пройти заново</button>
+                                    </div>
+                                </div>
+                                <div class="screening-item">
+                                    <div class="screening-item__badge">PSS</div>
+                                    <div class="screening-item__info">
+                                        <div class="screening-item__name">PSS-4 — стресс</div>
+                                        <div class="screening-item__hint">пройден 2 недели назад</div>
+                                    </div>
+                                    <div class="screening-item__score screening-item__score--low">
+                                        <div class="screening-item__score-value">6 / 16</div>
+                                        <div class="screening-item__score-hint">умеренно</div>
+                                    </div>
+                                    <div class="screening-item__action">
+                                        <button class="btn btn--secondary" type="button">Пройти заново</button>
+                                    </div>
+                                </div>
+                                <div class="screening-item">
+                                    <div class="screening-item__badge">ASQ</div>
+                                    <div class="screening-item__info">
+                                        <div class="screening-item__name">ASQ — суицидальный риск</div>
+                                        <div class="screening-item__hint">не пройден</div>
+                                    </div>
+                                    <div class="screening-item__score">
+                                        <div class="screening-item__score-value" style="color: var(--color-text-tertiary);">—</div>
+                                        <div class="screening-item__score-hint">4 вопроса · 1 минута</div>
+                                    </div>
+                                    <div class="screening-item__action">
+                                        <button class="btn btn--primary" type="button">Пройти</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ===== ПОДПИСКА ===== -->
+                    <section class="section" id="subscription">
+                        <div class="section__header">
+                            <h2 class="section__title">Подписка</h2>
+                        </div>
+
+                        <div class="subscription-card">
+                            <div class="subscription-card__header">
+                                <div>
+                                    <span class="subscription-card__tier subscription-card__tier--free">Бесплатно</span>
+                                    <h3 class="subscription-card__title" style="margin-top: var(--space-2);">Базовый план</h3>
+                                    <p class="subscription-card__hint">
+                                        Все основное доступно навсегда. Платные планы — для тех, кому нужно больше.
+                                    </p>
+                                </div>
+                            </div>
+                            <ul class="subscription-card__features">
+                                <li class="subscription-card__feature">
+                                    <svg class="subscription-card__feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                    Кризисная помощь
+                                </li>
+                                <li class="subscription-card__feature">
+                                    <svg class="subscription-card__feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                    3 терапевтические сессии в месяц
+                                </li>
+                                <li class="subscription-card__feature">
+                                    <svg class="subscription-card__feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                    Базовые упражнения и техники
+                                </li>
+                                <li class="subscription-card__feature">
+                                    <svg class="subscription-card__feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                    Кризисные контакты
+                                </li>
+                            </ul>
+                            <div class="subscription-card__footer">
+                                <span style="font-size: var(--fs-sm); color: var(--color-text-secondary);">
+                                    В этом месяце использовано: 3 из 3 терапевтических сессий
+                                </span>
+                                <button class="btn btn--primary" type="button">Посмотреть тарифы</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ===== ИСТОРИЯ ЧАТОВ ===== -->
+                    <section class="section" id="history">
+                        <div class="section__header">
+                            <h2 class="section__title">История чатов</h2>
+                            <button class="btn btn--ghost" type="button">Все →</button>
+                        </div>
+
+                        <div class="card card--inset">
+                            <div class="chat-list">
+                                <a class="chat-list-item" href="index.html">
+                                    <div>
+                                        <div class="chat-list-item__title">Ночные мысли</div>
+                                        <div class="chat-list-item__preview">устал. как будто всё слишком…</div>
+                                    </div>
+                                    <div class="chat-list-item__meta">
+                                        <div class="chat-list-item__date">сегодня</div>
+                                    </div>
+                                </a>
+                                <a class="chat-list-item" href="index.html">
+                                    <div>
+                                        <div class="chat-list-item__title">Сложный разговор с матерью</div>
+                                        <div class="chat-list-item__preview">не знаю как с ней говорить, у нас всегда так</div>
+                                    </div>
+                                    <div class="chat-list-item__meta">
+                                        <div class="chat-list-item__date">вчера</div>
+                                    </div>
+                                </a>
+                                <a class="chat-list-item" href="index.html">
+                                    <div>
+                                        <div class="chat-list-item__title">О работе и тревоге</div>
+                                        <div class="chat-list-item__preview">второй день не могу заставить себя открыть рабочий чат</div>
+                                    </div>
+                                    <div class="chat-list-item__meta">
+                                        <div class="chat-list-item__date">3 дн. назад</div>
+                                    </div>
+                                </a>
+                                <a class="chat-list-item" href="index.html">
+                                    <div>
+                                        <div class="chat-list-item__title">Память о бабушке</div>
+                                        <div class="chat-list-item__preview">сегодня нашел её платок в шкафу, и…</div>
+                                    </div>
+                                    <div class="chat-list-item__meta">
+                                        <div class="chat-list-item__date">неделю назад</div>
+                                    </div>
+                                </a>
+                                <a class="chat-list-item" href="index.html">
+                                    <div>
+                                        <div class="chat-list-item__title">Не могу спать</div>
+                                        <div class="chat-list-item__preview">третью ночь подряд просыпаюсь в 4 утра</div>
+                                    </div>
+                                    <div class="chat-list-item__meta">
+                                        <div class="chat-list-item__date">2 нед. назад</div>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </section>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="scripts/profile.js"></script>
+</body>
+</html>

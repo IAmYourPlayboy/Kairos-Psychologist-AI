@@ -5,44 +5,50 @@ import HumanTypingEffect from "./HumanTypingEffect";
 interface MessageBubbleProps {
   role: "user" | "assistant";
   content: string;
-  isStreaming?: boolean;
+  /**
+   * Анимировать печать (для бота).
+   * По умолчанию true — для свежих сообщений.
+   * Для сообщений из истории / при перезагрузке — передавать false.
+   */
+  animateTyping?: boolean;
   onTypingComplete?: () => void;
 }
 
 /**
- * Пузырь сообщения в чате
+ * Пузырь сообщения в чате.
  *
- * Для сообщений бота использует HumanTypingEffect для "живой" печати
+ * Цвета подобраны под палитру Кайроса (warm + accent):
+ * - Бот: тёплый бежевый фон (как лист бумаги)
+ * - Пользователь: акцентный синий (доверие, безопасность)
+ *
+ * Для бота используется HumanTypingEffect — анимация «живой» печати
+ * с паузами после знаков препинания.
  */
 export default function MessageBubble({
   role,
   content,
-  isStreaming = false,
+  animateTyping = true,
   onTypingComplete,
 }: MessageBubbleProps) {
   const isBot = role === "assistant";
 
   return (
-    <div
-      className={`flex ${isBot ? "justify-start" : "justify-end"} mb-4`}
-    >
+    <div className={`flex ${isBot ? "justify-start" : "justify-end"} mb-3`}>
       <div
-        className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+        className={`max-w-[80%] rounded-2xl px-4 py-2.5 leading-relaxed ${
           isBot
-            ? "bg-gray-100 text-gray-900"
-            : "bg-blue-600 text-white"
+            ? "bg-warm-100 text-warm-900 rounded-bl-sm"
+            : "bg-accent-500 text-white rounded-br-sm"
         }`}
       >
-        {isBot && !isStreaming ? (
-          // Бот: используем HumanTypingEffect для "живой" печати
+        {isBot && animateTyping ? (
           <HumanTypingEffect
             text={content}
             onComplete={onTypingComplete}
             speed="normal"
           />
         ) : (
-          // Пользователь или streaming: обычный текст
-          <span className="whitespace-pre-wrap">{content}</span>
+          <span className="whitespace-pre-wrap break-words">{content}</span>
         )}
       </div>
     </div>

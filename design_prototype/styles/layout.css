@@ -1,0 +1,33 @@
+/* ==========================================================================
+   МАКЕТ: главная сетка приложения
+   Сайдбар (стекло) + Чат (центр) + Правая панель
+   ========================================================================== */
+
+.app-shell {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) 1fr var(--right-panel-width);
+    height: 100vh;
+    width: 100vw;
+    transition: grid-template-columns var(--transition-base);
+}
+
+/* Свёрнутый сайдбар: только иконки */
+.app-shell.is-sidebar-collapsed {
+    grid-template-columns: var(--sidebar-width-collapsed) 1fr var(--right-panel-width);
+}
+
+/* Адаптив: на узких экранах правая панель уже */
+@media (max-width: 1280px) {
+    .app-shell {
+        grid-template-columns: var(--sidebar-width) 1fr 260px;
+    }
+    .app-shell.is-sidebar-collapsed {
+        grid-template-columns: var(--sidebar-width-collapsed) 1fr 260px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .app-shell {
+        grid-template-columns: var(--sidebar-width-collapsed) 1fr 240px;
+    }
+}

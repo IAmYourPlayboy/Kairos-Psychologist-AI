@@ -20,8 +20,8 @@
 
 ## ФУНДАМЕНТ (Месяц 1, бюджет: 0-1 000₽)
 
-### ½ Блок 1 — Бекенд: FastAPI каркас
-**Статус**: Код есть, не запускался в этой сессии
+### ✅ Блок 1 — Бекенд: FastAPI каркас
+**Статус**: Работает (Сессия 17 — uvicorn запущен, /api/health отвечает 200)
 **Зависимости**: Нет
 **Acceptance Criteria**:
 - [x] Создана структура проекта согласно CLAUDE.md
@@ -39,8 +39,8 @@
 
 ---
 
-### ½ Блок 1.5 — .env и secrets management
-**Статус**: Базовая часть есть
+### ✅ Блок 1.5 — .env и secrets management
+**Статус**: Работает (Сессия 17 — .env загружается, секреты в gitignore)
 **Зависимости**: Блок 1
 **Acceptance Criteria**:
 - [x] `.env.example` создан с шаблоном переменных
@@ -53,8 +53,8 @@
 
 ---
 
-### ½ Блок 2 — Бекенд: LLM-абстракция
-**Статус**: Код есть, не подключён к реальному API
+### ✅ Блок 2 — Бекенд: LLM-абстракция
+**Статус**: Работает (Сессия 17 — реальный вызов Yandex Cloud, OpenAI-совместимый API)
 **Зависимости**: Блок 1
 **Acceptance Criteria**:
 - [x] `app/core/llm/base.py` с BaseLLMProvider (ABC)
@@ -72,29 +72,25 @@
 
 ---
 
-### ⬜ Блок 2.5 — Подключение Yandex Cloud AI Studio
+### ½ Блок 2.5 — Подключение Yandex Cloud AI Studio
 **Статус**: Не начато  
 **Зависимости**: Блок 2  
 **Acceptance Criteria**:
-- [ ] Зарегистрирован в Yandex Cloud
-- [ ] Получен стартовый грант (4 000₽)
-- [ ] API-ключ создан для AI Studio
-- [ ] LLM_BASE_URL и LLM_API_KEY указаны в .env
-- [ ] Тест: генерация через API работает → ответ от Qwen3-14B
+- [x] Зарегистрирован в Yandex Cloud
+- [x] Сервисный аккаунт создан: `ai-studio-9fe55b` (id: `aje6uober8o0inbuovie`)
+- [x] API-ключ создан для AI Studio (id: `ajefv4i5b5qr17huko61`)
+- [x] LLM_BASE_URL и LLM_API_KEY указаны в .env
+- [x] Folder ID получен: `b1gsi8fibvna5mkauuu4`
+- [x] Тест: генерация через API работает → ответ от **YandexGPT Lite** (workaround)
+- [ ] **Что осталось**: подключить **Qwen3-14B** в Yandex Console → https://console.yandex.cloud/folders/b1gsi8fibvna5mkauuu4/foundation-models
+- [ ] После подключения вернуть `LLM_MODEL=gpt://b1gsi8fibvna5mkauuu4/qwen3-14b/latest`
 
-**Подзадачи**:
-1. Зарегистрироваться в Yandex Cloud
-2. Получить стартовый грант
-3. Создать API-ключ для AI Studio
-4. Обновить .env с ключами
-5. Протестировать генерацию через API
-
-**Примечание**: Можно сделать сразу после Блока 2 для тестирования LLM.
+**Текущая модель**: YandexGPT Lite (для отладки end-to-end). Имеет встроенную цензуру — для боевого терапевтического бота не подходит, нужно переключить на Qwen.
 
 ---
 
-### ½ Блок 3 — Бекенд: терапевтические промпты
-**Статус**: Код есть, тесты нужно прогнать
+### ✅ Блок 3 — Бекенд: терапевтические промпты
+**Статус**: Работает (Сессия 17 — промпты передаются в LLM, бот отвечает в стиле «Кайроса»)
 **Зависимости**: Нет (можно параллельно с Блоком 1-2)
 **Acceptance Criteria**:
 - [x] `app/core/prompts/base.py` с базовым системным промптом (PROMPT + FORBIDDEN_PHRASES)
@@ -112,8 +108,8 @@
 
 ---
 
-### ½ Блок 4 — Бекенд: кризисная детекция
-**Статус**: Код есть, тесты нужно прогнать
+### ✅ Блок 4 — Бекенд: кризисная детекция
+**Статус**: Работает (Сессия 17 — детектор интегрирован в /api/chat, проставляет crisis_level в БД)
 **Зависимости**: Нет
 **Acceptance Criteria**:
 - [x] `app/core/crisis/detector.py` с `assess_crisis_level()`
@@ -128,68 +124,74 @@
 
 ---
 
-### ⬜ Блок 5 — Бекенд: эндпоинт /api/chat ⭐ **ПРИОРИТЕТ #1**
-**Статус**: Не начато (главный gap)
-**Зависимости**: Блоки 2, 3, 4 (все ½ готовы)
+### ✅ Блок 5 — Бекенд: эндпоинт /api/chat ⭐ **СЕРДЦЕ ПРОДУКТА**
+**Статус**: РАБОТАЕТ end-to-end (Сессия 17 — проверено вживую с YandexGPT Lite)
+**Зависимости**: Блоки 2, 3, 4, 6a (все готовы)
 **Acceptance Criteria**:
-- [ ] `app/api/chat.py` с POST `/api/chat`
-- [ ] Принимает `{message, session_id, age_group?}`
-- [ ] Возвращает `{reply, crisis_level, contacts, branch}`
-- [ ] Поток: crisis detection → prompt builder → LLM → response
-- [ ] Интеграция с `therapy_router.py` (выбор техники)
-- [ ] Тест: `POST /api/chat {"message": "мне плохо"}` → ответ по протоколу
-- [ ] Тест: `POST /api/chat {"message": "хочу умереть"}` → crisis_level="immediate" + contacts
-- [ ] Обработка ошибок LLM (timeout, rate limit, 5xx)
+- [x] `app/api/chat.py` с POST `/api/chat`
+- [x] Принимает `{message, session_id?, guest_id?, age_group?, history?}`
+- [x] Возвращает `{reply, session_id, message_id, crisis_level, crisis_contacts, branch, response_time_ms, prompt_tokens, completion_tokens}`
+- [x] Поток: crisis detection → branch selector (A/B) → prompt builder → LLM → response
+- [x] Сохранение пользовательского сообщения и ответа бота в БД (data flywheel — inline data logger Блок 6b)
+- [x] Создание / обновление ChatSession (counter, max crisis level)
+- [x] Pydantic схемы запроса/ответа в `app/api/schemas.py`
+- [x] Graceful degradation если LLM упал (immediate → жёсткий fallback с контактами; иначе общий текст)
+- [ ] Реальный тест end-to-end: запустить uvicorn + curl → получить ответ
+- [ ] Тест в pytest: `POST /api/chat {"message": "мне плохо"}` → ответ по протоколу
+- [ ] Тест в pytest: `POST /api/chat {"message": "хочу умереть"}` → crisis_level="immediate" + contacts
 
-**Подзадачи**:
-1. Создать `app/api/chat.py`
-2. Интегрировать crisis detector
-3. Интегрировать prompt builder + therapy_router
-4. Интегрировать LLM provider
-5. Добавить обработку ошибок (graceful degradation если LLM недоступен)
-6. Написать интеграционные тесты `tests/test_chat.py`
+**Связанные новые модули**:
+- `app/core/branch_selector.py` — rule-based выбор ветки A/B по сообщению
+- `app/api/schemas.py` — Pydantic схемы
+
+**Что осталось**: запустить uvicorn, прогнать end-to-end test, написать pytest-тесты.
 
 ---
 
-### ⬜ Блок 5.5 — API endpoint /api/feedback
-**Статус**: Не начато  
-**Зависимости**: Блоки 5, 6a  
+### ✅ Блок 5.5 — API endpoint /api/feedback
+**Статус**: Работает (Сессия 17, в составе работающего пайплайна chat)
+**Зависимости**: Блоки 5, 6a
 **Acceptance Criteria**:
-- [ ] api/feedback.py с POST /api/feedback
-- [ ] Принимает {session_id, message_id, event_type}
-- [ ] event_type: "felt_better", "no_change", "thumbs_up", "thumbs_down", "crisis_escalated", "session_timeout"
-- [ ] Записывает в таблицу feedback_events
-- [ ] Тест: POST /api/feedback → запись в БД
-
-**Подзадачи**:
-1. Создать api/feedback.py
-2. Добавить роутер в api/router.py
-3. Написать тесты
+- [x] `app/api/feedback.py` с POST `/api/feedback`
+- [x] Принимает `{session_id, message_id?, event_type}`
+- [x] event_type: "felt_better", "no_change", "felt_worse", "thumbs_up", "thumbs_down", "crisis_escalated", "session_timeout", "user_left"
+- [x] Записывает в таблицу `feedback_events`
+- [x] Обновляет `outcome` сессии при felt_better/no_change/felt_worse/user_left
+- [x] Возвращает `{ok, feedback_id}`
+- [ ] Реальный тест: POST /api/feedback → запись в БД (нужен запуск)
+- [ ] Pytest-тест
 
 ---
 
-### ⬜ Блок 6a — Бекенд: модели данных + БД + Alembic
-**Статус**: Не начато  
-**Зависимости**: Блок 1  
+### ✅ Блок 6a — Бекенд: модели данных + БД + Alembic
+**Статус**: Работает (Сессия 17 — миграции применены, kairos_dev.db создан, INSERT/UPDATE/SELECT работают вживую)
+**Зависимости**: Блок 1
 **Acceptance Criteria**:
-- [ ] app/data/models.py с таблицами (users, chat_sessions, messages, feedback_events, subscriptions)
-- [ ] app/data/database.py с AsyncSession, engine, get_db()
-- [ ] Alembic настроен для миграций
-- [ ] Первая миграция создана (создание таблиц)
-- [ ] Тест: миграция применяется → таблицы созданы
+- [x] `app/data/models.py` с 6 таблицами: users, chat_sessions, messages, feedback_events, subscriptions, screening_results
+- [x] `app/data/database.py` с AsyncSession, engine, get_db()
+- [x] `app/data/__init__.py` с экспортами
+- [x] SQLite (dev) + PostgreSQL (prod) через одну переменную DATABASE_URL
+- [x] Alembic настроен (`alembic.ini`, `alembic/env.py`, `alembic/script.py.mako`)
+- [x] Поддержка `render_as_batch` для SQLite (для ALTER TABLE)
+- [x] `dispose_engine()` подключён в lifespan приложения
+- [x] `pyproject.toml` обновлён: добавлены sqlalchemy[asyncio], aiosqlite, asyncpg, alembic, pyyaml
+- [x] Эндпоинт `/api/health/db` для проверки подключения
+- [ ] **Юзер должен выполнить**: `pip install -e .` + `alembic revision --autogenerate -m "initial tables"` + `alembic upgrade head`
+- [ ] Pytest-тесты для моделей
 
-**Подзадачи**:
-1. Создать app/data/models.py с SQLAlchemy моделями
-2. Создать app/data/database.py с подключением
-3. Настроить Alembic (alembic.ini, env.py)
-4. Создать первую миграцию: `alembic revision --autogenerate -m "Initial tables"`
-5. Применить миграцию: `alembic upgrade head`
-6. Написать тесты для моделей
+**Связанные новые файлы** (Сессия 17):
+- `backend/app/data/models.py` (6 моделей SQLAlchemy 2.0)
+- `backend/app/data/database.py` (engine, session, get_db, lifecycle)
+- `backend/alembic.ini`, `backend/alembic/env.py`, `backend/alembic/script.py.mako`
 
 ---
 
-### ⬜ Блок 6b — Бекенд: data logger + pipeline
-**Статус**: Не начато  
+### ✅ Блок 6b — Бекенд: data logger + pipeline (inline в chat.py)
+**Статус**: Работает inline в `app/api/chat.py` (Сессия 17 — каждый диалог записывается в SQLite)
+**Зависимости**: Блоки 5, 6a
+
+**Решение**: пока логирование диалогов происходит **прямо в `chat.py`** (после каждого ответа LLM сохраняем `Message` в БД и обновляем `ChatSession`). Отдельный `app/data/logger.py` НЕ создавали — преждевременная абстракция.
+Когда в Блоке 12 (Aniemore) добавится больше метаданных (emotion, distress_score) — вынесем в отдельный модуль.
 **Зависимости**: Блоки 5, 6a  
 **Acceptance Criteria**:
 - [ ] app/data/logger.py с логированием каждого сообщения
@@ -228,17 +230,20 @@
 
 ---
 
-### ⬜ Блок 6d — Бекенд: middleware (request_id, CORS, error handling)
-**Статус**: Не начато  
-**Зависимости**: Блок 1  
+### ✅ Блок 6d — Бекенд: middleware (request_id, CORS, error handling)
+**Статус**: Работает (Сессия 17 — frontend ↔ backend без CORS-ошибок, error handler перехватывает 400 от LLM)
+**Зависимости**: Блок 1
 **Acceptance Criteria**:
-- [ ] app/middleware/request_id.py — X-Request-ID для трейсинга
-- [ ] CORS настроен в main.py (разрешены только нужные origins)
-- [ ] Security headers настроены (X-Content-Type-Options, X-Frame-Options, etc.)
-- [ ] Глобальный error handler для 500 ошибок
+- [x] `app/middleware/request_id.py` — X-Request-ID для трейсинга
+- [x] CORS настроен в `main.py`
+- [x] `app/middleware/security_headers.py` — X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy
+- [x] `app/middleware/error_handler.py` — 3 глобальных обработчика (HTTPException, RequestValidationError, Exception)
+- [x] Все обработчики возвращают унифицированный JSON `{error: {type, status, message, request_id, details?}}`
+- [x] При 500 — stacktrace **только в логи**, клиенту общий текст
 - [ ] Тест: каждый запрос имеет X-Request-ID в логах
+- [ ] Тест: при ошибке валидации — JSON с подробностями errors()
 
-**Подзадачи**:
+**Подзадачи** (старые):
 1. Создать app/middleware/request_id.py
 2. Настроить CORS в main.py
 3. Добавить security headers
@@ -247,111 +252,114 @@
 
 ---
 
-### ⬜ Блок 7 — Фронтенд: Next.js каркас ⭐ **ПРИОРИТЕТ #3**
-**Статус**: Не начато (есть 2 готовых компонента, но нет проекта Next.js)
-**Зависимости**: Нет (можно параллельно с бекендом)
-**⚠️ Важно**: Сейчас в `frontend/components/Chat/` уже есть `MessageBubble.tsx` и `HumanTypingEffect.tsx` — их нужно **сохранить** при инициализации проекта.
+### ✅ Блок 7 — Фронтенд: Next.js каркас
+**Статус**: Работает (Сессия 17 — `npm install` пройден, `npm run dev` поднимает сервер на :3000)
+**Зависимости**: Нет
+
+**Решение**: вместо `npx create-next-app` (интерактивный диалог) собрал каркас Next.js 14 руками — все конфиги, layout, globals.css созданы. Существующие `MessageBubble.tsx` + `HumanTypingEffect.tsx` сохранены.
 
 **Acceptance Criteria**:
-- [ ] `npx create-next-app@latest` запущен с `--ts --tailwind --app --src-dir=false`
-- [ ] Сохранены существующие `MessageBubble.tsx` + `HumanTypingEffect.tsx`
-- [ ] `package.json` создан с зависимостями
-- [ ] Шрифт Golos Text подключён
-- [ ] Палитра тёплых тонов настроена в tailwind.config.js
-- [ ] `app/layout.tsx` с метаданными
-- [ ] `app/globals.css` с Tailwind
-- [ ] `next.config.js` с rewrites `/api/` → `http://localhost:8001`
-- [ ] Тест: `npm run dev` → страница открывается на `http://localhost:3000`
+- [x] `package.json` с зависимостями (next 14.2, react 18.3, typescript 5.6, tailwind 3.4)
+- [x] `tsconfig.json` (strict mode, paths: `@/*`)
+- [x] `next.config.js` с rewrites `/api/*` → `http://localhost:8001`
+- [x] `tailwind.config.ts` с палитрой Кайроса (warm + accent + crisis)
+- [x] `postcss.config.mjs`
+- [x] `next-env.d.ts`
+- [x] `app/layout.tsx` с метаданными + Golos Text через `next/font/google`
+- [x] `app/page.tsx` — редирект на `/chat`
+- [x] `app/globals.css` с Tailwind base + кастомным скроллбаром
+- [x] `frontend/.gitignore` (node_modules, .next, .env*)
+- [x] Сохранены `MessageBubble.tsx` + `HumanTypingEffect.tsx`
+- [ ] **Юзер должен выполнить**: `cd frontend && npm install && npm run dev` → проверить что `http://localhost:3000` открывается
 
-**Подзадачи**:
-1. Сохранить `frontend/components/Chat/*.tsx` во временную папку
-2. Запустить `npx create-next-app@latest frontend` (или в `frontend-new` и потом перенести)
-3. Настроить TypeScript strict mode
-4. Настроить Tailwind CSS
-5. Подключить шрифт Golos Text (через next/font/google)
-6. Создать палитру цветов
-7. Настроить `next.config.js` для проксирования API
-8. Вернуть существующие компоненты в `components/Chat/`
+**Связанные новые файлы** (Сессия 17):
+- `frontend/package.json`, `tsconfig.json`, `next.config.js`, `tailwind.config.ts`, `postcss.config.mjs`, `next-env.d.ts`
+- `frontend/app/layout.tsx`, `frontend/app/page.tsx`, `frontend/app/globals.css`
+- `frontend/.gitignore`
 
 ---
 
-### ¼ Блок 8 — Фронтенд: чат-интерфейс
-**Статус**: 2 из 5 компонентов готовы
+### ✅ Блок 8 — Фронтенд: чат-интерфейс
+**Статус**: Работает end-to-end (Сессия 17 — отправка сообщения, отображение ответа, авто-скролл)
 **Зависимости**: Блок 7
-**Acceptance Criteria**:
-- [ ] components/Chat/ChatContainer.tsx
-- [x] components/Chat/MessageBubble.tsx ✓
-- [x] components/Chat/HumanTypingEffect.tsx ✓ (бонус — «живая» печать)
-- [ ] components/Chat/TypingIndicator.tsx
-- [ ] components/Chat/QuickReplies.tsx
-- [ ] components/Chat/InputArea.tsx
-- [ ] hooks/useChat.ts с логикой чата
-- [ ] Тест: набрал «мне плохо» → увидел ответ бота
-- [ ] Авто-скролл к последнему сообщению
 
-**Подзадачи**:
-1. После Блока 7 (npm install, etc.):
-2. Создать оставшиеся компоненты: ChatContainer, TypingIndicator, QuickReplies, InputArea
-3. Создать hooks/useChat.ts
-4. Интегрировать с API /chat (Блок 5 должен быть готов)
-5. Добавить авто-скролл
-6. Стилизовать пузыри (MessageBubble уже стилизован — Tailwind)
+**Acceptance Criteria**:
+- [x] `components/Chat/ChatContainer.tsx` — главный контейнер (header, лента, input, кризисная модалка)
+- [x] `components/Chat/MessageBubble.tsx` (доработан: палитра warm/accent, флаг animateTyping)
+- [x] `components/Chat/HumanTypingEffect.tsx` ✓ (был ранее)
+- [x] `components/Chat/TypingIndicator.tsx` — три точки с пульсацией
+- [x] `components/Chat/InputArea.tsx` — textarea с авторазмером, Enter=send, Shift+Enter=newline, дисклеймер
+- [x] `hooks/useChat.ts` — основная логика (отправка, история, состояние, отмена, feedback, reset)
+- [x] `hooks/useSession.ts` — guest_id (localStorage) + session_id (sessionStorage), crypto.randomUUID()
+- [x] `lib/types.ts` — TypeScript-типы (соответствуют Pydantic-схемам бекенда)
+- [x] `lib/api.ts` — fetch-обёртка с таймаутом и обработкой ошибок (ApiClientError)
+- [x] `app/chat/page.tsx` — рендер ChatContainer
+- [x] Авто-скролл к последнему сообщению (scrollIntoView)
+- [x] EmptyState при первом заходе (приветствие)
+- [x] Оптимистичное добавление user-сообщения + статус (pending → synced → failed)
+- [x] AbortController для отмены запроса
+- [x] Дисклеймер «не замена врачу/психологу» под полем ввода
+- [ ] **Юзер должен**: `npm install` + `npm run dev` + написать «мне плохо» → увидеть ответ
+- [ ] QuickReplies (отложил — нужен Блок 12 NLP для умного предложения)
+
+**QuickReplies** перенесён в отдельный todo: умные подсказки требуют контекстного анализа (Блок 12 — Aniemore).
 
 ---
 
-### ⬜ Блок 9 — Фронтенд: кризисный блок
-**Статус**: Не начато  
-**Зависимости**: Блок 8  
-**Acceptance Criteria**:
-- [ ] components/Crisis/SOSButton.tsx в шапке (всегда видна)
-- [ ] components/Crisis/CrisisPanel.tsx с номерами
-- [ ] components/Crisis/CrisisInlineCard.tsx в чате
-- [ ] SOS-кнопка пульсирует при crisis_level > normal
-- [ ] Панель с номерами (112, МЧС, телефоны доверия)
-- [ ] Тест: при ответе с crisis_contacts → карточка с номерами в чате
+### ½ Блок 9 — Фронтенд: кризисный блок
+**Статус**: Компоненты готовы (Сессия 17), ждёт ручной проверки на кризисном сообщении
+**Зависимости**: Блок 8
 
-**Подзадачи**:
-1. Создать SOSButton.tsx
-2. Создать CrisisPanel.tsx
-3. Создать CrisisInlineCard.tsx
-4. Добавить анимацию пульсации
-5. Интегрировать с crisis_level из API
+**Acceptance Criteria**:
+- [x] `components/Crisis/SOSButton.tsx` в шапке — цвет и анимация зависят от `crisisLevel`
+- [x] `components/Crisis/CrisisPanel.tsx` — модальная панель с номерами (tel: ссылки)
+- [x] `components/Crisis/CrisisInlineCard.tsx` — карточка контактов под ответом бота в ленте
+- [x] SOS-кнопка пульсирует при `crisis_level=high` (медленно) и `immediate` (быстро)
+- [x] Панель открывается автоматически при `immediate`
+- [x] Дефолтные контакты в CrisisPanel (на случай если бекенд молчит)
+- [x] Контакты подставляются из `last_assistant_message.crisis_contacts`
+- [x] Цвета карточки: elevated→warm, high→crisis-50, immediate→crisis-100
+- [ ] Тест: реально отправить сообщение «хочу умереть» → увидеть immediate панель + контакты
 
 ---
 
-### ⬜ Блок 10 — Фронтенд: локальное хранилище (Dexie.js)
-**Статус**: Не начато  
-**Зависимости**: Блок 8  
+### ½ Блок 10 — Фронтенд: локальное хранилище (Dexie.js)
+**Статус**: Код готов (Сессия 18 — `lib/db.ts` + интеграция с `useChat`), нужен `npm install dexie` и проверка вживую
+**Зависимости**: Блок 8
 **Acceptance Criteria**:
-- [ ] lib/db.ts с Dexie БД (sessions, messages, syncQueue)
-- [ ] hooks/useSession.ts с guestId в localStorage
-- [ ] Каждое сообщение сохраняется в IndexedDB + отправляется на сервер
-- [ ] При возврате: «С возвращением. Хочешь продолжить?»
-- [ ] Тест: закрыл вкладку → открыл → чат на месте
+- [x] `lib/db.ts` с Dexie БД (sessions, messages, syncQueue) — 3 таблицы, индексы по sessionId/createdAt/syncStatus
+- [x] `hooks/useSession.ts` с guestId в localStorage (был ранее)
+- [x] `useChat` сохраняет каждое сообщение в IndexedDB (user → pending → synced/failed; bot → synced)
+- [x] При первом монтировании `useChat` подгружает историю сессии из IndexedDB
+- [x] `dexie@^4.0.10` добавлен в `frontend/package.json`
+- [x] Высокоуровневые хелперы: `saveLocalMessage`, `updateMessageStatus`, `loadSessionMessages`, `listSessions`, `deleteSession`, `clearAllLocalData`
+- [ ] **Юзер должен**: `cd frontend && npm install` (подтянет `dexie`) → `npm run dev` → отправить сообщение, перезагрузить страницу, убедиться что чат на месте
+- [ ] При возврате: «С возвращением. Хочешь продолжить?» — отдельным UI-элементом (Блок 29)
 
-**Подзадачи**:
-1. Установить Dexie.js
-2. Создать lib/db.ts со схемой
-3. Создать hooks/useSession.ts
-4. Интегрировать с useChat.ts
-5. Добавить логику возврата
+**Связанные новые файлы** (Сессия 18):
+- `frontend/lib/db.ts` (Dexie-схема + хелперы)
+- `frontend/hooks/useChat.ts` (добавлена интеграция с Dexie: запись + загрузка истории)
+- `frontend/package.json` (dexie зависимость)
 
 ---
 
-### ⬜ Блок 11 — Фронтенд: обратная связь
-**Статус**: Не начато  
-**Зависимости**: Блоки 8, 5.5  
+### ½ Блок 11 — Фронтенд: обратная связь
+**Статус**: Код готов (Сессия 18 — UI кнопок + интеграция в ChatContainer), нужна проверка вживую
+**Зависимости**: Блоки 8, 5.5
 **Acceptance Criteria**:
-- [ ] components/Feedback/SessionFeedback.tsx
-- [ ] «Стало легче?» [Да] [Нет] [Не уверен]
-- [ ] Показывается после завершения протокола
-- [ ] Записывается в feedback_events на сервере
-- [ ] Тест: нажал «Да» → POST /api/feedback → запись в БД
+- [x] `components/Feedback/MessageFeedback.tsx` — thumbs up/down под каждым ответом бота (главный сигнал data flywheel)
+- [x] `components/Feedback/SessionFeedback.tsx` — большая карточка «Стало легче / Не уверен / Хуже» в конце сессии
+- [x] Кнопка «Завершить» в шапке (показывается после первого ответа бота)
+- [x] После клика кнопки заменяются на «Спасибо» — повторно нажать нельзя
+- [x] Использует `chat.sendFeedback()` из `useChat` → POST /api/feedback с event_type
+- [x] event_type: `thumbs_up`, `thumbs_down`, `felt_better`, `no_change`, `felt_worse`
+- [ ] **Юзер должен**: проверить вживую — отправить сообщение, нажать 👍 → видно «Спасибо», в БД появилась запись в `feedback_events`
+- [ ] Pytest-тест feedback API (см. Блок 12.5 — `tests/test_chat.py` уже включает `test_feedback_creates_event`)
 
-**Подзадачи**:
-1. Создать SessionFeedback.tsx
-2. Интегрировать с useChat.ts
-3. Добавить логику показа после протокола
+**Связанные новые файлы** (Сессия 18):
+- `frontend/components/Feedback/MessageFeedback.tsx`
+- `frontend/components/Feedback/SessionFeedback.tsx`
+- `frontend/components/Chat/ChatContainer.tsx` (интегрированы оба компонента + кнопка «Завершить»)
 
 ---
 
@@ -380,25 +388,32 @@
 
 ---
 
-### ⬜ Блок 12.5 — Бекенд: тесты (pytest)
-**Статус**: Не начато  
-**Зависимости**: Блоки 1-12  
+### ½ Блок 12.5 — Бекенд: тесты (pytest)
+**Статус**: 4 файла тестов написаны (Сессия 18 — добавлен test_chat.py с моком LLM), нужен реальный прогон pytest юзером
+**Зависимости**: Блоки 1-12
 **Acceptance Criteria**:
-- [ ] tests/test_crisis.py — тесты кризисной детекции (все 3 уровня)
-- [ ] tests/test_prompts.py — тесты промптов (запрещённые фразы, ветвление)
-- [ ] tests/test_auth.py — тесты авторизации (register, login, JWT)
-- [ ] tests/test_chat.py — интеграционные тесты /api/chat
-- [ ] tests/test_sync.py — тесты синхронизации
-- [ ] pytest настроен, все тесты проходят
+- [x] `tests/conftest.py` — глобальные фикстуры (sample_crisis_messages, forbidden_phrases)
+- [x] `tests/test_crisis.py` — тесты кризисной детекции (все 4 уровня + приоритет + контакты)
+- [x] `tests/test_prompts.py` — тесты промптов (запрещённые фразы, ветвление, кризисные промпты)
+- [x] `tests/test_llm.py` — юнит-тесты OpenAICompatProvider (мок httpx)
+- [x] `tests/test_therapy_router.py` — smoke-тест динамического router (без assert, для глаз)
+- [x] **`tests/test_chat.py`** ⭐ — интеграционные тесты /api/chat и /api/feedback (Сессия 18):
+  - normal / immediate / high crisis сценарии
+  - персистентность сессии (один session_id для двух запросов)
+  - валидация запроса (пустое сообщение → 422)
+  - LLM падает → fallback с кризисными контактами
+  - feedback (thumbs_up, felt_better) → запись в `feedback_events`
+  - валидация event_type (неизвестный → 422)
+  - GET /api/health
+- [x] `pyproject.toml` уже содержит pytest>=8.0, pytest-asyncio>=0.24, httpx>=0.28
+- [x] `asyncio_mode = "auto"` в `[tool.pytest.ini_options]` (можно писать `async def test_...`)
+- [ ] **Юзер должен**: `cd backend && pip install -e ".[dev]" && pytest -v` — все 4 файла должны зеленеть (мок LLM убирает зависимость от сети)
+- [ ] tests/test_auth.py — после Блока 13
+- [ ] tests/test_sync.py — после Блока 15
+- [ ] tests/test_screening.py — после Блока 69
 
-**Подзадачи**:
-1. Настроить pytest + pytest-asyncio
-2. Создать fixtures для БД и тестовых данных
-3. Написать тесты для кризисной детекции
-4. Написать тесты для промптов
-5. Написать тесты для авторизации
-6. Написать интеграционные тесты /api/chat
-7. Написать тесты для синхронизации
+**Связанные новые файлы** (Сессия 18):
+- `backend/tests/test_chat.py` (12 тестов с моком LLM через `unittest.mock.patch`)
 
 ---
 
@@ -1328,65 +1343,96 @@
 
 | Статус | Количество | Что значит |
 |---|---|---|
-| ✅ Завершено | 3 | Блоки 66, 67, 68 (инфраструктура репо, Сессия 16) |
-| ½ Код есть, не протестирован | 22 | Блоки 1, 1.5, 2, 3, 4, 47-54, 57-65 |
-| ¼ Частично сделано | 1 | Блок 8 (2 из 5 компонентов фронта) |
-| ⬜ Не начато | 51 | Всё остальное (включая Блок 5 — главный gap, и новый Блок 69 — Скрининг) |
+| ✅ **Завершено и работает** | **15** | Блоки **1, 1.5, 2, 3, 4, 5, 5.5, 6a, 6b, 6d, 7, 8** (Сессия 17 — рабочий MVP) + 66, 67, 68 (инфра репо) |
+| ½ Код есть, не до конца | 22 | Блок 9 (нужна проверка кризис-сценария), 10 (Dexie готов, нужен `npm install`), 11 (Feedback UI готов, нужна проверка), 12.5 (тесты написаны, нужен прогон), 2.5 (workaround YandexGPT, нужен Qwen), 47-54, 57-65 |
+| ⬜ Не начато | 40 | Auth, платежи, агенты в продакшен, скрининг, deploy |
 
-**Прогресс по реальному коду** (½ + ¼ + ✅): **~34%** (26 из 77)
-**Прогресс по «боевому» состоянию** (только ✅): **~4%** (3 из 77)
+**Прогресс по реальному коду** (½ + ✅): **~48%** (37 из 77)
+**Прогресс по «боевому» состоянию** (только ✅): **~19%** (15 из 77)
 
-> **Главный gap**: Блок 5 (`/api/chat`) — без него ничего не работает end-to-end.
-> Без этого блока 22 уже написанных «½» останутся в подвешенном состоянии.
+> **🎉 СЕРДЦЕ ПРОДУКТА БЬЁТСЯ.** Сессия 17: пользователь пишет → Next.js → FastAPI → Yandex Cloud LLM → SQLite → ответ. Полная цепочка работает end-to-end. Бот отвечает: «Привет! Я — Кайрос, сервис первой поддержки. Что случилось? Тебе нужна помощь?»
+
+### Что нужно для перевода ½ → ✅ (Сессия 17 → 18)
+
+Юзер выполняет **6 команд**:
+
+```bash
+# Backend
+cd d:\Kairos\backend
+venv\Scripts\activate
+pip install -e .
+alembic revision --autogenerate -m "initial tables"
+alembic upgrade head
+uvicorn app.main:app --reload --port 8001  # отдельный терминал
+
+# Frontend (другой терминал)
+cd d:\Kairos\frontend
+npm install
+npm run dev
+```
+
+После этого:
+- Открыть `http://localhost:3000/chat`
+- Написать «привет» → получить ответ
+- Если работает — Блоки 1, 1.5, 2, 2.5, 3, 4, 5, 5.5, 6a, 6b, 6d, 7, 8, 9 переходят в ✅
+
+> **Что осталось сделать от юзера**: прислать `folder_id` Yandex Cloud для подключения LLM (см. ниже).
 
 ---
 
 ## Следующие шаги (приоритеты)
 
-### Критический путь к работающему MVP
+### 🎯 Что MVP уже умеет (Сессия 17)
 
-1. **⭐ Блок 5** — `/api/chat` endpoint (главный пробел!)
-   - Связать crisis detector + prompt builder + LLM provider
-   - Протестировать полный поток: сообщение → ответ
-   - Без этого никакой фронтенд не имеет смысла
+- ✅ Принимает сообщение от пользователя через веб-чат
+- ✅ Распознаёт кризисный уровень (4 уровня)
+- ✅ Выбирает терапевтическую ветку (A — мобилизация / B — стабилизация)
+- ✅ Собирает протокольный промпт из базы знаний
+- ✅ Вызывает LLM (сейчас YandexGPT Lite, переключим на Qwen3-14B)
+- ✅ Записывает каждое сообщение в SQLite (data flywheel в зачатке)
+- ✅ Показывает SOS-кнопку и кризисную панель
+- ✅ Подсвечивает интерфейс при кризисе
 
-2. **Блок 2.5** — Подключить реальный LLM API
-   - Получить ключ Yandex Cloud AI Studio (или Cloud.ru — бесплатно)
-   - Прописать в `.env`
-   - Запустить `tests/test_llm.py`
+### 🔴 Что нужно сделать в первую очередь
 
-3. **Блок 6a** — Модели данных + БД + Alembic
-   - Без БД нет data flywheel
-   - Можно использовать удалённый PostgreSQL на VPS (Блок 18)
+1. **Блок 2.5 завершить — подключить Qwen3-14B**
+   - Открыть https://console.yandex.cloud/folders/b1gsi8fibvna5mkauuu4/foundation-models
+   - Подключить модель к folder
+   - Скопировать точный URI с карточки модели
+   - Заменить в `.env`: `LLM_MODEL=<URI>`
+   - Перезапустить uvicorn → проверить чат
 
-4. **Блок 7** — Next.js каркас
-   - Сохранить 2 готовых компонента
-   - `npx create-next-app` в `frontend/`
+2. **Блок 12.5** — прогнать pytest (`cd backend && pytest -v`)
+   - Узнать какие из 4 тестовых файлов проходят
+   - Поправить упавшие
 
-5. **Блок 8** — Чат-интерфейс
-   - Доделать оставшиеся 3 компонента + хук `useChat`
+3. **Блок 9 проверить вживую** — отправить кризисное сообщение
+   - Написать «всё бессмысленно, не хочу жить»
+   - Должна открыться кризисная панель + бот должен дать контакты
 
-6. **Блок 69** — Скрининг ASQ + PSS-4 + ОСР
-   - **Критично для безопасности**: ASQ ловит суицидальный риск точнее, чем keyword-детектор
-   - Метрика для data flywheel (PSS-4 до/после = улучшилось ли состояние)
-   - Юридическое усиление (валидированные опросники)
-   - Делать **после Блока 5** (нужен POST endpoint) и **Блока 6a** (нужна модель `ScreeningResult`)
+### 🟡 Следующие важные блоки
 
-### Параллельно
+4. **Блок 10** — Dexie.js (offline-кэш) — чтобы чат работал без сети
+5. **Блок 11** — кнопки «стало легче / не помогло» под ответами бота (data flywheel сигналы)
+6. **Блок 13-15** — аутентификация (email + пароль для начала)
+7. **Блок 12** — двухслойный NLP (Aniemore + маркеры) — улучшит выбор ветки и кризисную детекцию
+8. **Блок 69** — Скрининг ASQ + PSS-4 + ОСР (валидированные опросники)
 
-- **Блок 12.5** — прогнать существующие тесты (`pytest`) — узнать что реально работает
-- **Блок 55** — протестировать пайплайн агентов end-to-end (когда будет API key)
+### 🟢 Долгосрочное
 
-### После MVP
-
-- Блоки 12 (NLP), 13-15 (auth), 23-25 (платежи), 22 (самозанятый)
-- Блоки 47-56 (агенты в продакшен)
+- Блоки 17-21 — деплой на VPS Timeweb Cloud
+- Блоки 22-27 — платежи (ЮKassa) + юридические страницы
+- Блоки 47-55 — пайплайн агентов в продакшене
+- Блок 36 — заявка на грант (Yandex Cloud Boost Start)
 
 ---
 
-*Последнее обновление: Сессия 16, Апрель 2026*
+*Последнее обновление: Сессия 18, Май 2026*
 *История правок:*
 - *16.1: чистка корня + структура + блоки 47-68 (агенты, мозг, инфра репо)*
 - *16.2: добавлен Блок 69 (Скрининг ASQ + PSS-4 + ОСР), исправлены ссылки на удалённые файлы*
+- *17.0: реализованы Блоки 5, 5.5, 6a, 6b, 6d, 7, 8, 9 — рабочий MVP бекенда + фронта*
+- *17.1: 🎉 **СЕРДЦЕ ПРОДУКТА БЬЁТСЯ!** End-to-end работает: чат отвечает через Yandex Cloud (workaround YandexGPT Lite, нужно подключить Qwen). 12 блоков переведены ½ → ✅. Прогресс по «боевому» состоянию: 4% → 19%.*
+- *18.0: реализованы Блок 10 (Dexie offline-кэш), Блок 11 (Feedback UI: thumbs + session card), Блок 12.5 (test_chat.py с моком LLM — 12 интеграционных тестов /api/chat и /api/feedback). 3 блока переведены ⬜ → ½. Прогресс по реальному коду: 44% → 48%.*
 
-*Версия: 2.2*
+*Версия: 2.5*

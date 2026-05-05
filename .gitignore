@@ -34,6 +34,11 @@ ENV/
 .venv/
 .env/
 
+# ===== Claude Code локальные настройки =====
+# settings.local.json — это локальные permissions конкретного разработчика,
+# не должны попадать в репо. settings.json (если появится) — общий, его не игнорим.
+.claude/settings.local.json
+
 # ===== Тесты и кэши =====
 .pytest_cache/
 .coverage

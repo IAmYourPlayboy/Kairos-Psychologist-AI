@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="paper">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кайрос — главный экран</title>
+
+    <!-- Раннее восстановление темы из localStorage — до загрузки CSS,
+         чтобы не было «вспышки» неправильной темы -->
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('kairos.theme');
+                if (saved === 'paper' || saved === 'loft') {
+                    document.documentElement.setAttribute('data-theme', saved);
+                }
+            } catch (e) { /* ignore */ }
+        })();
+    </script>
+
+    <!-- Golos Text (Контур, 2022) — российский UI-шрифт -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="styles/variables.css">
+    <link rel="stylesheet" href="styles/themes.css">
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/layout.css">
+    <link rel="stylesheet" href="styles/sidebar.css">
+    <link rel="stylesheet" href="styles/chat.css">
+    <link rel="stylesheet" href="styles/right-panel.css">
+    <link rel="stylesheet" href="styles/theme-toggle.css">
+</head>
+<body>
+    <!-- Фоновое изображение (опционально, пользователь может поставить или убрать) -->
+    <div class="background-wallpaper" aria-hidden="true"></div>
+
+    <!-- Тестовый переключатель темы (потом уйдёт в настройки) -->
+    <button
+        class="theme-toggle"
+        type="button"
+        id="themeToggle"
+        aria-label="Переключить тему"
+        title="Переключить тему">
+        <span class="theme-toggle__label" id="themeToggleLabel">Лофт</span>
+    </button>
+
+    <main class="app-shell">
+        <!-- ============ САЙДБАР (стеклянный бок) ============ -->
+        <aside class="sidebar" id="sidebar" aria-label="История разговоров">
+            <div class="sidebar__inner">
+                <!-- Верх: список разговоров -->
+                <div class="sidebar__top">
+                    <button class="conversation-item conversation-item--new" type="button">
+                        <span class="conversation-item__icon" aria-hidden="true">+</span>
+                        <span class="conversation-item__label">Новый разговор</span>
+                    </button>
+
+                    <div class="sidebar__divider" aria-hidden="true"></div>
+
+                    <button class="conversation-item" type="button">
+                        <span class="conversation-item__label">О работе и тревоге</span>
+                    </button>
+                    <button class="conversation-item" type="button">
+                        <span class="conversation-item__label">Сложный разговор</span>
+                    </button>
+                    <button class="conversation-item" type="button">
+                        <span class="conversation-item__label">Ночные мысли</span>
+                    </button>
+                    <button class="conversation-item" type="button">
+                        <span class="conversation-item__label">Память о бабушке</span>
+                    </button>
+
+                    <button class="conversation-item conversation-item--archive" type="button">
+                        <span class="conversation-item__label">Архив</span>
+                    </button>
+                </div>
+
+                <!-- Низ: иконки настроек и бургер -->
+                <div class="sidebar__bottom">
+                    <a class="icon-button icon-button--settings" href="settings.html" aria-label="Настройки" title="Настройки">
+                        <!-- Иконка настроек (шестерёнка) -->
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </a>
+
+                    <button class="icon-button icon-button--burger" type="button" id="burgerToggle" aria-label="Свернуть меню" aria-expanded="true" title="Свернуть меню">
+                        <!-- Иконка бургера -->
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                            <line x1="4" y1="7" x2="20" y2="7"/>
+                            <line x1="4" y1="12" x2="20" y2="12"/>
+                            <line x1="4" y1="17" x2="20" y2="17"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ============ ОСНОВНОЙ ЧАТ ============ -->
+        <section class="chat" aria-label="Окно разговора">
+            <!-- Сообщения -->
+            <div class="chat__messages" id="chatMessages">
+                <div class="message message--assistant">
+                    <p>Я здесь.</p>
+                    <p>Расскажи, что происходит — настолько подробно, насколько тебе сейчас удобно.</p>
+                </div>
+
+                <div class="message message--user">
+                    <p>не знаю с чего начать. в голове каша уже несколько дней</p>
+                </div>
+
+                <div class="message message--assistant">
+                    <p>Это нормально — когда внутри много, бывает трудно выбрать первое слово.</p>
+                    <p>Может, начнём с самого простого: что ты чувствуешь прямо сейчас, в этот момент?</p>
+                </div>
+
+                <div class="message message--user">
+                    <p>устал. как будто всё слишком</p>
+                </div>
+            </div>
+
+            <!-- Поле ввода -->
+            <div class="chat__input-wrapper">
+                <form class="chat__input" id="chatForm">
+                    <textarea
+                        class="chat__textarea"
+                        placeholder="Напиши, что чувствуешь…"
+                        rows="1"
+                        aria-label="Сообщение"
+                    ></textarea>
+                    <button class="chat__send" type="submit" aria-label="Отправить">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="19" x2="12" y2="5"/>
+                            <polyline points="5 12 12 5 19 12"/>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- ============ ПРАВАЯ ПАНЕЛЬ ============ -->
+        <aside class="right-panel" aria-label="Дополнительно">
+            <!-- Профиль (сверху) -->
+            <a class="profile-button" href="profile.html" aria-label="Личный кабинет" title="Личный кабинет">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+            </a>
+
+            <!-- Блок "Совет" -->
+            <div class="info-card info-card--tip" role="region" aria-label="Совет">
+                <div class="info-card__header">
+                    <span class="info-card__dot" aria-hidden="true"></span>
+                    <span class="info-card__title">Совет</span>
+                </div>
+                <p class="info-card__text">
+                    Можно открыть упражнение «5–4–3–2–1» в любой момент — оно помогает вернуться в настоящее.
+                </p>
+            </div>
+
+            <!-- Блок "Новости" -->
+            <div class="info-card info-card--news" role="region" aria-label="Новости">
+                <div class="info-card__header">
+                    <span class="info-card__dot" aria-hidden="true"></span>
+                    <span class="info-card__title">Новости</span>
+                </div>
+                <p class="info-card__text">
+                    Добавили ночной режим. Включить можно в настройках.
+                </p>
+            </div>
+
+            <!-- SOS-кнопка (всегда видна) -->
+            <button class="sos-button" type="button" aria-label="Экстренная помощь">
+                <span class="sos-button__label">SOS</span>
+                <span class="sos-button__hint">Экстренные контакты</span>
+            </button>
+        </aside>
+    </main>
+
+    <script src="scripts/theme.js"></script>
+    <script src="scripts/burger.js"></script>
+    <script src="scripts/textarea.js"></script>
+</body>
+</html>

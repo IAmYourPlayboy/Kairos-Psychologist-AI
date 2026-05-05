@@ -1,0 +1,201 @@
+/* ==========================================================================
+   ТЕМЫ КАЙРОСА
+   Каждая тема переопределяет цветовые токены. Структурные токены
+   (отступы, радиусы, шрифты) живут в variables.css и общие для всех тем.
+
+   Переключение: <html data-theme="paper"> | <html data-theme="loft">
+
+   Plus: цвет фона страницы прокидывается ДО загрузки CSS через атрибут
+   <html style="background-color: ..."> в JS — чтобы не было «вспышки белого».
+   ========================================================================== */
+
+
+/* ==========================================================================
+   ТЕМА «БУМАГА» (по умолчанию) — светлая, тёплая, нейтральная
+   ========================================================================== */
+:root,
+[data-theme="paper"] {
+    /* ---------- Фон ---------- */
+    --color-bg-base:        #FAF7F2;
+    --color-bg-elevated:    #FFFFFF;
+    --color-bg-glass:       rgba(255, 255, 255, 0.55);
+    --color-bg-glass-edge:  rgba(255, 255, 255, 0.75);
+    --color-bg-overlay:     rgba(31, 41, 55, 0.04);
+
+    /* ---------- Текст ---------- */
+    --color-text-primary:   #1F2937;
+    --color-text-secondary: #6B7280;
+    --color-text-tertiary:  #9CA3AF;
+    --color-text-on-accent: #FFFFFF;
+
+    /* ---------- Акценты ---------- */
+    --color-accent:         #5B8A8A;
+    --color-accent-hover:   #4A7474;
+    --color-accent-soft:    rgba(91, 138, 138, 0.10);
+
+    --color-warm:           #C2410C;
+    --color-warm-soft:      rgba(194, 65, 12, 0.10);
+
+    /* ---------- Семантика ---------- */
+    --color-crisis:         #DC2626;
+    --color-crisis-hover:   #B91C1C;
+    --color-crisis-soft:    rgba(220, 38, 38, 0.08);
+
+    --color-tip-bg:         #FEF3C7;
+    --color-tip-accent:     #D97706;
+    --color-tip-text:       #78350F;
+
+    --color-news-bg:        #DBEAFE;
+    --color-news-accent:    #2563EB;
+    --color-news-text:      #1E3A8A;
+
+    /* ---------- Границы ---------- */
+    --color-border-soft:    rgba(31, 41, 55, 0.06);
+    --color-border-medium:  rgba(31, 41, 55, 0.10);
+
+    /* ---------- Тени ---------- */
+    --shadow-soft:          0 1px 2px rgba(31, 41, 55, 0.04),
+                            0 2px 8px rgba(31, 41, 55, 0.04);
+    --shadow-elevated:      0 2px 4px rgba(31, 41, 55, 0.05),
+                            0 8px 24px rgba(31, 41, 55, 0.06);
+    --shadow-glass:         0 1px 0 rgba(255, 255, 255, 0.6) inset,
+                            0 8px 32px rgba(31, 41, 55, 0.06);
+
+    /* ---------- Атмосфера (специфичные для темы декорации) ---------- */
+    --atmosphere-vignette:  radial-gradient(
+                                ellipse at center,
+                                transparent 50%,
+                                rgba(31, 41, 55, 0.04) 100%);
+    --atmosphere-grain:     none;
+    --atmosphere-glow:      none;
+
+    /* Блик на стеклянном сайдбаре — холодный белый, как иней */
+    --sidebar-shimmer:      linear-gradient(135deg,
+                                rgba(255, 255, 255, 0.40) 0%,
+                                rgba(255, 255, 255, 0.10) 40%,
+                                rgba(255, 255, 255, 0.25) 100%);
+}
+
+
+/* ==========================================================================
+   ТЕМА «ЛОФТ» — тёмное дерево, латунь, ламповая атмосфера
+   Палитра построена на трёх основах:
+   • Дерево (тёмный орех)         — фон, поверхности
+   • Латунь / старая медь         — акцент, активные элементы
+   • Тёплая лампа Эдисона          — освещение, блики
+   ========================================================================== */
+[data-theme="loft"] {
+    /* ----- Дерево (фон) -----
+       Не чёрный, не серый. Тёплый коричневый с лёгкой охрой.
+       Как стол из мореного дуба под лампой. */
+    --color-bg-base:        #1E1814;            /* Глубокое мореное дерево */
+    --color-bg-elevated:    #2A211B;            /* Карточки — на тон светлее */
+    --color-bg-glass:       rgba(42, 33, 27, 0.55);
+    --color-bg-glass-edge:  rgba(58, 47, 38, 0.40);
+    --color-bg-overlay:     rgba(231, 200, 162, 0.06); /* Тёплый ховер */
+
+    /* ----- Текст -----
+       Не чистый белый — глаз режет. Тёплый кремовый,
+       будто страница книги под жёлтой лампой. */
+    --color-text-primary:   #EDE0CE;            /* Тёплая кремовая бумага */
+    --color-text-secondary: #B8A78E;            /* Состаренный пергамент */
+    --color-text-tertiary:  #8A7A64;            /* Тень от лампы */
+    --color-text-on-accent: #1E1814;            /* На латуни — тёмный текст */
+
+    /* ----- Акцент: латунь / старая медь -----
+       Главный «материал» лофта — металл с патиной.
+       Не золото (вульгарно), не серебро (холодно). */
+    --color-accent:         #C9A06B;            /* Латунь */
+    --color-accent-hover:   #D9B47E;            /* Латунь под светом */
+    --color-accent-soft:    rgba(201, 160, 107, 0.12);
+
+    /* ----- Тёплый акцент: кирпич / охра -----
+       Стена из старого кирпича в баре. */
+    --color-warm:           #B8694A;
+    --color-warm-soft:      rgba(184, 105, 74, 0.15);
+
+    /* ----- Кризис -----
+       Тоже в палитре, но насыщенный.
+       Не неоновый красный — глубокий бордовый/винный. */
+    --color-crisis:         #C4564A;
+    --color-crisis-hover:   #D26A5E;
+    --color-crisis-soft:    rgba(196, 86, 74, 0.12);
+
+    /* ----- Совет / Новости -----
+       Адаптируем под тёмный: убираем кислотность,
+       работаем приглушёнными тонами. */
+    --color-tip-bg:         rgba(217, 144, 60, 0.14);
+    --color-tip-accent:     #D9903C;             /* Свет лампы */
+    --color-tip-text:       #E8C68A;
+
+    --color-news-bg:        rgba(122, 145, 156, 0.14);
+    --color-news-accent:    #8FAAB8;             /* Лунный синий */
+    --color-news-text:      #B8CDD6;
+
+    /* ----- Границы -----
+       Не серые линии — оттенки тёплого. */
+    --color-border-soft:    rgba(231, 200, 162, 0.08);
+    --color-border-medium:  rgba(231, 200, 162, 0.15);
+
+    /* ----- Тени -----
+       Глубже, тёплее. Лампа отбрасывает мягкий тёплый свет,
+       тени получаются длинные и насыщенные. */
+    --shadow-soft:          0 1px 2px rgba(0, 0, 0, 0.20),
+                            0 2px 12px rgba(0, 0, 0, 0.20);
+    --shadow-elevated:      0 4px 12px rgba(0, 0, 0, 0.30),
+                            0 12px 32px rgba(0, 0, 0, 0.25);
+    --shadow-glass:         0 1px 0 rgba(231, 200, 162, 0.08) inset,
+                            0 8px 32px rgba(0, 0, 0, 0.35);
+
+    /* ----- Атмосфера (специфичные для темы декорации) -----
+       Виньетка по краям — собирает взгляд к центру.
+       Зернистость — как у старой плёнки/дерева.
+       Свечение лампы — тёплое пятно сверху-справа. */
+    --atmosphere-vignette:  radial-gradient(
+                                ellipse 90% 80% at 50% 45%,
+                                transparent 30%,
+                                rgba(0, 0, 0, 0.35) 100%);
+
+    --atmosphere-glow:      radial-gradient(
+                                circle 600px at 85% 0%,
+                                rgba(217, 144, 60, 0.10) 0%,
+                                rgba(217, 144, 60, 0.04) 35%,
+                                transparent 70%);
+
+    /* Зернистость (грейн) — SVG-шум, эмулирует фактуру дерева/плёнки.
+       Очень слабый, чтобы не отвлекал. */
+    --atmosphere-grain:     url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.92  0 0 0 0 0.78  0 0 0 0 0.55  0 0 0 0.045 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+
+    /* Блик на стеклянном сайдбаре в Лофте — тёплый,
+       как латунный отблеск от лампы Эдисона */
+    --sidebar-shimmer:      linear-gradient(135deg,
+                                rgba(231, 200, 162, 0.10) 0%,
+                                rgba(231, 200, 162, 0.02) 40%,
+                                rgba(217, 144, 60, 0.06) 100%);
+}
+
+
+/* ==========================================================================
+   ПЛАВНЫЙ ПЕРЕХОД МЕЖДУ ТЕМАМИ
+   Цвет/фон тегов плавно перетекают при смене data-theme.
+   ========================================================================== */
+html,
+body,
+.app-shell,
+.sidebar,
+.right-panel,
+.message,
+.info-card,
+.sos-button,
+.profile-button,
+.icon-button,
+.chat__input,
+.chat__send,
+.chat__send svg,
+.background-wallpaper {
+    transition:
+        background-color var(--transition-slow),
+        color var(--transition-slow),
+        border-color var(--transition-slow),
+        box-shadow var(--transition-slow);
+}

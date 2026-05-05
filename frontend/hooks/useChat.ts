@@ -1,0 +1,264 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { ApiClientError, postChat, postFeedback } from "@/lib/api";
+import {
+  loadSessionMessages,
+  saveLocalMessage,
+  updateMessageStatus,
+  type LocalMessage,
+} from "@/lib/db";
+import type {
+  ChatMessageHistory,
+  CrisisLevel,
+  FeedbackEventType,
+  UIMessage,
+} from "@/lib/types";
+import { useSession } from "./useSession";
+
+/**
+ * Главный хук чата.
+ *
+ * Управляет:
+ * - Списком сообщений (UI)
+ * - Отправкой сообщения и получением ответа от /api/chat
+ * - Текущим состоянием (печатает / ошибка)
+ * - Кризисным уровнем (для UI индикаторов: SOS-кнопка, карточки контактов)
+ * - Отправкой feedback-событий
+ *
+ * История на сервер шлётся в формате [{role, content}, ...] (без UUID).
+ * Сервер сам сохраняет всё в БД для data flywheel.
+ */
+
+interface UseChatOptions {
+  ageGroup?: "child" | "youth" | "adult";
+}
+
+function generateUuid(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return Math.random().toString(36).slice(2);
+}
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+export function useChat(options: UseChatOptions = {}) {
+  const { ageGroup = "adult" } = options;
+  const { guestId, sessionId, resetSession } = useSession();
+
+  const [messages, setMessages] = useState<UIMessage[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [crisisLevel, setCrisisLevel] = useState<CrisisLevel>("normal");
+
+  // AbortController для отмены текущего запроса
+  const abortRef = useRef<AbortController | null>(null);
+
+  /**
+   * При первом монтировании (или при смене sessionId) — подгружаем
+   * историю из локальной БД (Dexie / IndexedDB).
+   * Это позволяет пользователю вернуться к чату после закрытия вкладки.
+   */
+  useEffect(() => {
+    if (!sessionId) return;
+    let cancelled = false;
+    void (async () => {
+      const local = await loadSessionMessages(sessionId);
+      if (cancelled || local.length === 0) return;
+      const ui: UIMessage[] = local.map((m) => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        createdAt: m.createdAt,
+        crisisLevel: m.crisisLevel,
+        crisisContacts: m.crisisContacts,
+        status: m.syncStatus,
+      }));
+      setMessages(ui);
+      // Восстанавливаем последний кризисный уровень для UI индикаторов
+      const lastBot = [...local].reverse().find((m) => m.role === "assistant");
+      if (lastBot?.crisisLevel) setCrisisLevel(lastBot.crisisLevel);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
+
+  /**
+   * Отправить сообщение пользователя боту.
+   */
+  const sendMessage = useCallback(
+    async (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed || isTyping) return;
+
+      setError(null);
+
+      // 1. Добавляем пользовательское сообщение в UI сразу (оптимистично)
+      const userMessage: UIMessage = {
+        id: generateUuid(),
+        role: "user",
+        content: trimmed,
+        createdAt: nowIso(),
+        status: "pending",
+      };
+      setMessages((prev) => [...prev, userMessage]);
+
+      // 1.5. Сразу сохраняем в локальную БД (Dexie) — на случай потери сети.
+      if (sessionId) {
+        const localUser: LocalMessage = {
+          id: userMessage.id,
+          sessionId,
+          role: "user",
+          content: trimmed,
+          createdAt: userMessage.createdAt,
+          syncStatus: "pending",
+        };
+        void saveLocalMessage(localUser);
+      }
+
+      // 2. Готовим историю для отправки на сервер (без только что добавленного user-сообщения)
+      const history: ChatMessageHistory[] = messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+      // 3. Отправляем
+      setIsTyping(true);
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      try {
+        const response = await postChat(
+          {
+            message: trimmed,
+            session_id: sessionId,
+            guest_id: guestId,
+            age_group: ageGroup,
+            history,
+          },
+          controller.signal,
+        );
+
+        // 4. Помечаем user-сообщение как synced
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === userMessage.id ? { ...m, status: "synced" } : m,
+          ),
+        );
+        void updateMessageStatus(userMessage.id, { syncStatus: "synced" });
+
+        // 5. Добавляем ответ бота
+        const botMessage: UIMessage = {
+          id: response.message_id,
+          role: "assistant",
+          content: response.reply,
+          createdAt: nowIso(),
+          crisisLevel: response.crisis_level,
+          crisisContacts: response.crisis_contacts,
+          status: "synced",
+        };
+        setMessages((prev) => [...prev, botMessage]);
+        setCrisisLevel(response.crisis_level);
+
+        // 5.5. Сохраняем ответ бота в локальную БД (Dexie).
+        // Используем session_id из ответа сервера (он канонический).
+        const localBot: LocalMessage = {
+          id: response.message_id,
+          sessionId: response.session_id,
+          role: "assistant",
+          content: response.reply,
+          createdAt: botMessage.createdAt,
+          crisisLevel: response.crisis_level,
+          crisisContacts: response.crisis_contacts,
+          syncStatus: "synced",
+        };
+        void saveLocalMessage(localBot);
+
+        // Если бекенд прислал llm_error — это значит был fallback.
+        // В debug-режиме показываем диагностику (для разработчика).
+        if (response.llm_error) {
+          setError(`LLM fallback: ${response.llm_error}`);
+        }
+      } catch (e) {
+        // Ошибка — помечаем user-сообщение как failed и показываем ошибку
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === userMessage.id ? { ...m, status: "failed" } : m,
+          ),
+        );
+        void updateMessageStatus(userMessage.id, { syncStatus: "failed" });
+
+        const errorMsg =
+          e instanceof ApiClientError
+            ? e.message
+            : "Что-то пошло не так. Попробуй ещё раз.";
+        setError(errorMsg);
+      } finally {
+        setIsTyping(false);
+        abortRef.current = null;
+      }
+    },
+    [messages, isTyping, sessionId, guestId, ageGroup],
+  );
+
+  /**
+   * Отменить текущий запрос (если бот ещё думает).
+   */
+  const cancelTyping = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setIsTyping(false);
+  }, []);
+
+  /**
+   * Очистить чат и начать новую сессию.
+   */
+  const resetChat = useCallback(() => {
+    cancelTyping();
+    setMessages([]);
+    setError(null);
+    setCrisisLevel("normal");
+    resetSession();
+  }, [cancelTyping, resetSession]);
+
+  /**
+   * Отправить feedback-событие (явное от пользователя).
+   */
+  const sendFeedback = useCallback(
+    async (event: FeedbackEventType, messageId?: string) => {
+      if (!sessionId) return;
+      try {
+        await postFeedback({
+          session_id: sessionId,
+          message_id: messageId ?? null,
+          event_type: event,
+        });
+      } catch (e) {
+        // Тихо логируем — не показываем пользователю
+        // (feedback не критичен для основного потока)
+        console.error("Feedback failed:", e);
+      }
+    },
+    [sessionId],
+  );
+
+  return {
+    // Состояние
+    messages,
+    isTyping,
+    error,
+    crisisLevel,
+    sessionId,
+    guestId,
+    // Действия
+    sendMessage,
+    cancelTyping,
+    resetChat,
+    sendFeedback,
+  };
+}

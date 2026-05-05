@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="paper">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кайрос — настройки</title>
+
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('kairos.theme');
+                if (saved === 'paper' || saved === 'loft') {
+                    document.documentElement.setAttribute('data-theme', saved);
+                }
+            } catch (e) {}
+        })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="styles/variables.css">
+    <link rel="stylesheet" href="styles/themes.css">
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/pages.css">
+</head>
+<body>
+    <div class="background-wallpaper" aria-hidden="true"></div>
+
+    <div class="page">
+        <!-- ============ ТОПБАР ============ -->
+        <header class="topbar">
+            <a class="topbar__back" href="index.html" aria-label="Вернуться в чат" title="Вернуться в чат">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"/>
+                    <polyline points="12 19 5 12 12 5"/>
+                </svg>
+            </a>
+            <h1 class="topbar__title">Настройки</h1>
+        </header>
+
+        <div class="page__body">
+            <!-- ============ БОКОВАЯ НАВИГАЦИЯ ============ -->
+            <nav class="side-nav" aria-label="Разделы настроек">
+                <div class="side-nav__group">
+                    <a class="side-nav__item is-active" href="#appearance">
+                        <svg class="side-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9"/>
+                            <path d="M12 3 a9 9 0 0 0 0 18 z" fill="currentColor" opacity="0.3"/>
+                        </svg>
+                        <span class="side-nav__item-label">Внешний вид</span>
+                    </a>
+                    <a class="side-nav__item" href="#account">
+                        <svg class="side-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <span class="side-nav__item-label">Аккаунт</span>
+                    </a>
+                    <a class="side-nav__item" href="#privacy">
+                        <svg class="side-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        <span class="side-nav__item-label">Конфиденциальность</span>
+                    </a>
+                    <a class="side-nav__item" href="#notifications">
+                        <svg class="side-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.7 21a2 2 0 0 1-3.4 0"/>
+                        </svg>
+                        <span class="side-nav__item-label">Уведомления</span>
+                        <span class="side-nav__item-badge">скоро</span>
+                    </a>
+                    <a class="side-nav__item" href="#voice">
+                        <svg class="side-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                            <line x1="12" y1="19" x2="12" y2="22"/>
+                        </svg>
+                        <span class="side-nav__item-label">Голос</span>
+                        <span class="side-nav__item-badge">скоро</span>
+                    </a>
+                </div>
+
+                <div class="side-nav__group">
+                    <div class="side-nav__heading">Поддержка</div>
+                    <a class="side-nav__item" href="#help">
+                        <svg class="side-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        <span class="side-nav__item-label">Помощь</span>
+                    </a>
+                    <a class="side-nav__item" href="#about">
+                        <svg class="side-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="16" x2="12" y2="12"/>
+                            <line x1="12" y1="8" x2="12.01" y2="8"/>
+                        </svg>
+                        <span class="side-nav__item-label">О приложении</span>
+                    </a>
+                </div>
+            </nav>
+
+            <!-- ============ КОНТЕНТ ============ -->
+            <main class="page__content">
+                <div class="page__content-inner">
+
+                    <!-- ===== ВНЕШНИЙ ВИД (детально) ===== -->
+                    <section class="section" id="appearance">
+                        <div class="section__header">
+                            <h2 class="section__title">Внешний вид</h2>
+                        </div>
+                        <p class="section__hint">
+                            Настрой Кайрос так, чтобы тебе было приятно сюда возвращаться.
+                            Все изменения применяются сразу — можно посмотреть и поменять.
+                        </p>
+
+                        <!-- Тема -->
+                        <div class="card card--inset">
+                            <div style="padding: var(--space-5) var(--space-5) var(--space-3);">
+                                <div class="card__title">Тема</div>
+                                <p class="card__hint" style="margin-top: var(--space-1);">
+                                    «Бумага» — светлая и спокойная для дневного использования.
+                                    «Лофт» — тёплая и приглушённая для вечера и ночи.
+                                </p>
+                            </div>
+
+                            <div class="theme-preview-grid">
+                                <button class="theme-preview theme-preview--paper" type="button" data-theme-choice="paper" aria-label="Выбрать тему Бумага">
+                                    <div class="theme-preview__canvas" aria-hidden="true"></div>
+                                    <div class="theme-preview__label">
+                                        <div>
+                                            <div class="theme-preview__label-name">Бумага</div>
+                                            <div class="theme-preview__label-hint">Светлая, нейтральная</div>
+                                        </div>
+                                        <span class="theme-preview__check" aria-hidden="true">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="20 6 9 17 4 12"/>
+                                            </svg>
+                                        </span>
+                                    </div>
+                                </button>
+
+                                <button class="theme-preview theme-preview--loft" type="button" data-theme-choice="loft" aria-label="Выбрать тему Лофт">
+                                    <div class="theme-preview__canvas" aria-hidden="true"></div>
+                                    <div class="theme-preview__label">
+                                        <div>
+                                            <div class="theme-preview__label-name">Лофт</div>
+                                            <div class="theme-preview__label-hint">Тёмная, ламповая</div>
+                                        </div>
+                                        <span class="theme-preview__check" aria-hidden="true">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="20 6 9 17 4 12"/>
+                                            </svg>
+                                        </span>
+                                    </div>
+                                </button>
+                            </div>
+
+                            <div class="row">
+                                <div class="row__label">
+                                    <div class="row__label-title">Следовать системе</div>
+                                    <div class="row__label-hint">Автоматически переключаться между «Бумагой» днём и «Лофтом» ночью</div>
+                                </div>
+                                <div class="row__control">
+                                    <label class="toggle">
+                                        <input type="checkbox" id="systemTheme">
+                                        <span class="toggle__slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Обои -->
+                        <div class="card card--inset">
+                            <div style="padding: var(--space-5);">
+                                <div class="card__title">Обои</div>
+                                <p class="card__hint" style="margin-top: var(--space-1); margin-bottom: var(--space-4);">
+                                    Картинка на фоне чата. Можно поставить своё изображение или оставить пустым.
+                                </p>
+
+                                <label class="dropzone" for="wallpaperUpload">
+                                    <svg class="dropzone__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                                        <path d="M21 15l-5-5L5 21"/>
+                                    </svg>
+                                    <div class="dropzone__text">Перетащи картинку сюда или нажми, чтобы выбрать</div>
+                                    <div class="dropzone__hint">JPG, PNG, WebP до 10 МБ</div>
+                                    <input type="file" id="wallpaperUpload" accept="image/*" hidden>
+                                </label>
+                            </div>
+
+                            <div class="row">
+                                <div class="row__label">
+                                    <div class="row__label-title">Размытие фона</div>
+                                    <div class="row__label-hint">Чтобы обои не отвлекали от текста</div>
+                                </div>
+                                <div class="row__control">
+                                    <input type="range" class="slider" min="0" max="20" value="8" aria-label="Степень размытия">
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="row__label">
+                                    <div class="row__label-title">Затемнение</div>
+                                    <div class="row__label-hint">Делает фон менее ярким</div>
+                                </div>
+                                <div class="row__control">
+                                    <input type="range" class="slider" min="0" max="80" value="20" aria-label="Степень затемнения">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Шрифт и текст -->
+                        <div class="card card--inset">
+                            <div style="padding: var(--space-5) var(--space-5) var(--space-3);">
+                                <div class="card__title">Текст</div>
+                                <p class="card__hint" style="margin-top: var(--space-1);">
+                                    Если читать тяжело — увеличь размер. Это особенно важно ночью или при усталости.
+                                </p>
+                            </div>
+
+                            <div class="row">
+                                <div class="row__label">
+                                    <div class="row__label-title">Размер</div>
+                                    <div class="row__label-hint">Базовый: 16px. Подходит большинству.</div>
+                                </div>
+                                <div class="row__control">
+                                    <div class="segmented" role="radiogroup" aria-label="Размер текста">
+                                        <button class="segmented__item" type="button" role="radio" aria-checked="false">Мелкий</button>
+                                        <button class="segmented__item is-active" type="button" role="radio" aria-checked="true">Обычный</button>
+                                        <button class="segmented__item" type="button" role="radio" aria-checked="false">Крупный</button>
+                                        <button class="segmented__item" type="button" role="radio" aria-checked="false">Очень крупный</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="row__label">
+                                    <div class="row__label-title">Высота строк</div>
+                                    <div class="row__label-hint">Если тесно — увеличь, текст «дышит» лучше</div>
+                                </div>
+                                <div class="row__control">
+                                    <div class="segmented" role="radiogroup" aria-label="Высота строк">
+                                        <button class="segmented__item" type="button" role="radio" aria-checked="false">Плотно</button>
+                                        <button class="segmented__item is-active" type="button" role="radio" aria-checked="true">Обычно</button>
+                                        <button class="segmented__item" type="button" role="radio" aria-checked="false">Свободно</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Анимации -->
+                        <div class="card card--inset">
+                            <div class="row">
+                                <div class="row__label">
+                                    <div class="row__label-title">Плавные переходы</div>
+                                    <div class="row__label-hint">Если тревожно от движений — выключи. Интерфейс будет переключаться мгновенно.</div>
+                                </div>
+                                <div class="row__control">
+                                    <label class="toggle">
+                                        <input type="checkbox" id="animations" checked>
+                                        <span class="toggle__slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ===== АККАУНТ (заглушка) ===== -->
+                    <section class="section" id="account">
+                        <div class="section__header">
+                            <h2 class="section__title">Аккаунт</h2>
+                        </div>
+                        <p class="section__hint">Способы входа и управление аккаунтом.</p>
+
+                        <div class="card card--inset">
+                            <div class="row">
+                                <div class="row__label">
+                                    <div class="row__label-title">Электронная почта</div>
+                                    <div class="row__label-hint">не указана</div>
+                                </div>
+                                <div class="row__control">
+                                    <button class="btn btn--secondary" type="button">Привязать</button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="row__label">
+                                    <div class="row__label-title">Telegram</div>
+                                    <div class="row__label-hint">не привязан</div>
+                                </div>
+                                <div class="row__control">
+                                    <button class="btn btn--secondary" type="button">Привязать</button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="row__label">
+                                    <div class="row__label-title">VK ID</div>
+                                    <div class="row__label-hint">не привязан</div>
+                                </div>
+                                <div class="row__control">
+                                    <button class="btn btn--secondary" type="button">Привязать</button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="row__label">
+                                    <div class="row__label-title">Номер телефона</div>
+                                    <div class="row__label-hint">не указан</div>
+                                </div>
+                                <div class="row__control">
+                                    <button class="btn btn--secondary" type="button">Привязать</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card card--inset">
+                            <div class="row">
+                                <div class="row__label">
+                                    <div class="row__label-title">Выйти</div>
+                                    <div class="row__label-hint">Закрыть сессию на этом устройстве</div>
+                                </div>
+                                <div class="row__control">
+                                    <button class="btn btn--ghost" type="button">Выйти</button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="row__label">
+                                    <div class="row__label-title">Удалить аккаунт</div>
+                                    <div class="row__label-hint">Удалит все данные безвозвратно. По закону у тебя есть это право.</div>
+                                </div>
+                                <div class="row__control">
+                                    <button class="btn btn--danger" type="button">Удалить</button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ===== КОНФИДЕНЦИАЛЬНОСТЬ ===== -->
+                    <section class="section" id="privacy">
+                        <div class="section__header">
+                            <h2 class="section__title">Конфиденциальность</h2>
+                        </div>
+                        <p class="section__hint">
+                            Кайрос работает с обезличенными данными — без имён, телефонов и адресов.
+                            Ты в любой момент можешь скачать всё, что есть, или удалить.
+                        </p>
+
+                        <div class="card card--inset">
+                            <div class="row">
+                                <div class="row__label">
+                                    <div class="row__label-title">Использовать мои разговоры для улучшения Кайроса</div>
+                                    <div class="row__label-hint">Анонимно, без ПДн. Помогает делать ответы точнее. Можно отключить.</div>
+                                </div>
+                                <div class="row__control">
+                                    <label class="toggle">
+                                        <input type="checkbox" checked>
+                                        <span class="toggle__slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="row__label">
+                                    <div class="row__label-title">Согласие на обработку данных о состоянии</div>
+                                    <div class="row__label-hint">Спецкатегория ПДн (ст. 10 ФЗ-152). Без этого Кайрос не сможет работать.</div>
+                                </div>
+                                <div class="row__control">
+                                    <label class="toggle">
+                                        <input type="checkbox" checked>
+                                        <span class="toggle__slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card card--inset">
+                            <div class="row">
+                                <div class="row__label">
+                                    <div class="row__label-title">Скачать мои данные</div>
+                                    <div class="row__label-hint">Все твои разговоры в одном файле (JSON)</div>
+                                </div>
+                                <div class="row__control">
+                                    <button class="btn btn--secondary" type="button">Скачать</button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="row__label">
+                                    <div class="row__label-title">Очистить историю чатов</div>
+                                    <div class="row__label-hint">Удалит все разговоры. Аккаунт сохранится.</div>
+                                </div>
+                                <div class="row__control">
+                                    <button class="btn btn--danger" type="button">Очистить</button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ===== УВЕДОМЛЕНИЯ ===== -->
+                    <section class="section" id="notifications">
+                        <div class="section__header">
+                            <h2 class="section__title">Уведомления</h2>
+                        </div>
+                        <p class="section__hint">Появятся в одном из ближайших обновлений.</p>
+
+                        <div class="card">
+                            <p class="card__hint">
+                                Здесь будут настройки звуков, push-уведомлений и напоминаний о техниках.
+                            </p>
+                        </div>
+                    </section>
+
+                    <!-- ===== ГОЛОС ===== -->
+                    <section class="section" id="voice">
+                        <div class="section__header">
+                            <h2 class="section__title">Голос</h2>
+                        </div>
+                        <p class="section__hint">Появится в Фазе 6 — голосовое сопровождение упражнений.</p>
+
+                        <div class="card">
+                            <p class="card__hint">
+                                Здесь будут выбор голоса, скорость и громкость TTS.
+                            </p>
+                        </div>
+                    </section>
+
+                    <!-- ===== ПОМОЩЬ ===== -->
+                    <section class="section" id="help">
+                        <div class="section__header">
+                            <h2 class="section__title">Помощь</h2>
+                        </div>
+
+                        <div class="card card--inset">
+                            <div class="row">
+                                <div class="row__label">
+                                    <div class="row__label-title">Кризисные контакты</div>
+                                    <div class="row__label-hint">Список телефонов и служб, которые работают круглосуточно</div>
+                                </div>
+                                <div class="row__control">
+                                    <button class="btn btn--secondary" type="button">Открыть</button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="row__label">
+                                    <div class="row__label-title">Связаться с поддержкой</div>
+                                    <div class="row__label-hint">Если что-то не работает или есть вопрос</div>
+                                </div>
+                                <div class="row__control">
+                                    <button class="btn btn--secondary" type="button">Написать</button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ===== О ПРИЛОЖЕНИИ ===== -->
+                    <section class="section" id="about">
+                        <div class="section__header">
+                            <h2 class="section__title">О приложении</h2>
+                        </div>
+
+                        <div class="card card--inset">
+                            <div class="row">
+                                <div class="row__label">
+                                    <div class="row__label-title">Версия</div>
+                                    <div class="row__label-hint">0.1.0 — исследовательский прототип</div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="row__label">
+                                    <div class="row__label-title">Политика конфиденциальности</div>
+                                </div>
+                                <div class="row__control">
+                                    <button class="btn btn--ghost" type="button">Открыть →</button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="row__label">
+                                    <div class="row__label-title">Пользовательское соглашение</div>
+                                </div>
+                                <div class="row__control">
+                                    <button class="btn btn--ghost" type="button">Открыть →</button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="row__label">
+                                    <div class="row__label-title">Информированное согласие</div>
+                                    <div class="row__label-hint">Для участников исследовательской фазы</div>
+                                </div>
+                                <div class="row__control">
+                                    <button class="btn btn--ghost" type="button">Открыть →</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="section__hint" style="text-align: center; margin-top: var(--space-4);">
+                            Кайрос — инструмент первой психологической помощи.<br>
+                            Не заменяет врача, психолога и психиатра.
+                        </p>
+                    </section>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="scripts/settings.js"></script>
+</body>
+</html>

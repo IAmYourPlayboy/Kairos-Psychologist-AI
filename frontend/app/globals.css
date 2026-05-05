@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===========================================================================
+ * Глобальные стили Кайроса
+ * =========================================================================== */
+
+:root {
+  /* Высота шапки/футера для отступов */
+  --header-height: 56px;
+  --footer-height: 40px;
+}
+
+html,
+body {
+  /* Тёплый светлый фон по умолчанию */
+  @apply bg-warm-50 text-warm-900;
+  /* Сглаженный шрифт на macOS / Windows */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  /* Чтобы фон растягивался на весь экран */
+  min-height: 100vh;
+}
+
+/* Скроллбар выглядит ненавязчиво */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-warm-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-warm-400;
+}

@@ -1,0 +1,277 @@
+/* ==========================================================================
+   САЙДБАР: «стеклянный бок» с историей разговоров
+   Frosted glass + анимация сворачивания
+   ========================================================================== */
+
+.sidebar {
+    position: relative;
+    height: 100vh;
+    overflow: hidden;
+    background: var(--color-bg-glass);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    backdrop-filter: blur(20px) saturate(140%);
+    border-right: 1px solid var(--color-border-soft);
+    box-shadow: var(--shadow-glass);
+    transition: width var(--transition-base);
+}
+
+/* Тонкий блик по краю — имитация замёрзшего стекла (Бумага)
+   или матовое стекло с тёплыми отблесками (Лофт) */
+.sidebar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--sidebar-shimmer);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Дополнительный световой блик сверху — как от потолочной лампы */
+.sidebar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 120px;
+    background: linear-gradient(180deg,
+        rgba(255, 255, 255, 0.10) 0%,
+        transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+[data-theme="loft"] .sidebar::after {
+    background: linear-gradient(180deg,
+        rgba(217, 144, 60, 0.06) 0%,
+        transparent 100%);
+}
+
+.sidebar__inner {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-4);
+}
+
+/* ---------- Верх: список разговоров ---------- */
+.sidebar__top {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding-right: var(--space-1);
+}
+.sidebar__top.scroll-soft {
+    /* применяем стиль скроллбара */
+}
+
+.sidebar__divider {
+    height: 1px;
+    background: var(--color-border-soft);
+    margin: var(--space-3) var(--space-2);
+}
+
+.conversation-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    text-align: left;
+    padding: var(--space-3) var(--space-3);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    font-size: var(--fs-sm);
+    font-weight: 400;
+    transition: background var(--transition-fast);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.conversation-item:hover {
+    background: var(--color-bg-overlay);
+}
+
+.conversation-item--new {
+    background: rgba(91, 138, 138, 0.08);
+    color: var(--color-accent);
+    font-weight: 500;
+    border: 1px dashed rgba(91, 138, 138, 0.30);
+}
+
+.conversation-item--new:hover {
+    background: var(--color-accent-soft);
+}
+
+.conversation-item__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    font-size: var(--fs-md);
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.conversation-item__label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: opacity var(--transition-base);
+}
+
+.conversation-item--archive {
+    color: var(--color-text-secondary);
+    font-size: var(--fs-xs);
+    margin-top: var(--space-2);
+}
+
+/* ---------- Низ: иконки настроек и бургер ----------
+   Используем относительный контейнер фиксированной высоты с
+   абсолютно-позиционированными иконками. Это позволяет иконкам
+   физически «переезжать» в новые координаты, а не перестраиваться
+   через flex (который даёт скачок).
+
+   Геометрия (развёрнутый сайдбар, ширина 280px, padding слева/справа 16+8=24px):
+     • settings: x = 0          (слева)
+     • burger:   x = 200px      (справа)
+
+   Геометрия (свёрнутый сайдбар, ширина 64px, без padding'а):
+     • settings: y = 0          (сверху, на новой позиции)
+     • burger:   y = 56px       (снизу — там, где раньше были настройки)
+     Оба по горизонтали отцентрированы (x = (64-40)/2 = 12px).
+*/
+.sidebar__bottom {
+    position: relative;
+    height: 64px;
+    padding: 0;
+    margin-top: var(--space-3);
+    border-top: 1px solid var(--color-border-soft);
+    transition: height var(--transition-base);
+}
+
+.sidebar__bottom .icon-button {
+    position: absolute;
+    transition:
+        left var(--transition-slow) var(--easing),
+        top var(--transition-slow) var(--easing),
+        background var(--transition-fast),
+        color var(--transition-fast),
+        transform var(--transition-base);
+}
+
+/* === Развёрнутое состояние (по умолчанию) === */
+.icon-button--settings {
+    left: 8px;
+    top: 12px;
+}
+
+.icon-button--burger {
+    left: calc(100% - 48px);   /* 280 (ширина sidebar) - 16 (padding inner) - 40 (button) - 8 (gap) ≈ */
+    top: 12px;
+}
+
+.icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition:
+        background var(--transition-fast),
+        color var(--transition-fast),
+        transform var(--transition-base);
+}
+
+.icon-button:hover {
+    background: var(--color-bg-overlay);
+    color: var(--color-text-primary);
+}
+
+.icon-button svg {
+    transition: transform var(--transition-fast);
+}
+
+.icon-button:active svg {
+    transform: scale(0.92);
+}
+
+/* ============ СОСТОЯНИЕ: СВЁРНУТЫЙ САЙДБАР ============ */
+
+.app-shell.is-sidebar-collapsed .sidebar {
+    width: var(--sidebar-width-collapsed);
+}
+
+/* Скрываем текст в кнопках разговоров */
+.app-shell.is-sidebar-collapsed .conversation-item__label,
+.app-shell.is-sidebar-collapsed .sidebar__divider {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Прячем сами кнопки разговоров (кроме «нового») */
+.app-shell.is-sidebar-collapsed .conversation-item:not(.conversation-item--new) {
+    visibility: hidden;
+    height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin: 0;
+    transition:
+        opacity var(--transition-fast),
+        height var(--transition-base),
+        padding var(--transition-base);
+}
+
+.app-shell.is-sidebar-collapsed .conversation-item--new {
+    justify-content: center;
+    padding: var(--space-3);
+}
+
+.app-shell.is-sidebar-collapsed .conversation-item--new .conversation-item__label {
+    display: none;
+}
+
+/* === Свёрнутое состояние ===
+   Контейнер растёт вверх (становится колонкой высотой ~108px),
+   и иконки переезжают в новые позиции:
+   - бургер «садится» туда, где были настройки в свёрнутом виде (нижняя позиция)
+   - настройки «возвышаются» над бургером
+*/
+.app-shell.is-sidebar-collapsed .sidebar__bottom {
+    height: 108px;
+}
+
+/* Свёрнутый sidebar шириной 64px → padding inner = 16px → доступная ширина = 32px.
+   Кнопка 40px центрируется в 64px-контейнере: left = (64 - 16*2 - 40)/2... нет —
+   inner padding 16px по всему периметру, значит контейнер sidebar__bottom внутри
+   inner получает ширину = 64 - 32 = 32px. Это меньше ширины кнопки.
+   Поэтому: при свёрнутом состоянии inner padding режется до нуля. */
+
+.app-shell.is-sidebar-collapsed .sidebar__inner {
+    padding: var(--space-4) var(--space-2);
+}
+
+/* Настройки — поднимаются наверх */
+.app-shell.is-sidebar-collapsed .icon-button--settings {
+    left: 4px;          /* (64 - 16(padding sides ×2) - 40(btn))/2 ≈ 4px */
+    top: 8px;
+}
+
+/* Бургер — встаёт на место, где раньше были настройки (низ) */
+.app-shell.is-sidebar-collapsed .icon-button--burger {
+    left: 4px;
+    top: 60px;          /* 8 (top settings) + 40 (height btn) + 12 (gap) = 60 */
+}
+
+/* Поворот бургера при сворачивании — лёгкая обратная связь */
+.app-shell.is-sidebar-collapsed .icon-button--burger svg {
+    transform: rotate(90deg);
+}

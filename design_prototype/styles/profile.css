@@ -1,0 +1,417 @@
+/* ==========================================================================
+   ЛИЧНЫЙ КАБИНЕТ
+   Сводка + статистика + скрининги + подписка + история чатов
+   ========================================================================== */
+
+
+/* ---------- Шапка профиля (имя + быстрые факты) ---------- */
+.profile-hero {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    padding: var(--space-6);
+    background:
+        linear-gradient(135deg,
+            var(--color-accent-soft) 0%,
+            transparent 60%),
+        var(--color-bg-elevated);
+    border: 1px solid var(--color-border-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-soft);
+}
+
+.profile-hero__avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-accent);
+    color: var(--color-text-on-accent);
+    font-size: var(--fs-xl);
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.profile-hero__info {
+    flex: 1;
+    min-width: 0;
+}
+
+.profile-hero__name {
+    font-size: var(--fs-xl);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 2px;
+}
+
+.profile-hero__meta {
+    font-size: var(--fs-sm);
+    color: var(--color-text-secondary);
+    line-height: var(--lh-relaxed);
+}
+
+.profile-hero__meta-dot {
+    display: inline-block;
+    margin: 0 var(--space-2);
+    color: var(--color-text-tertiary);
+}
+
+.profile-hero__actions {
+    display: flex;
+    gap: var(--space-2);
+    flex-shrink: 0;
+}
+
+
+/* ---------- Сводка (метрики в один ряд) ---------- */
+.metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-3);
+}
+
+@media (max-width: 720px) {
+    .metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.metric {
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border-soft);
+    border-radius: var(--radius-md);
+    padding: var(--space-4) var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.metric__value {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    line-height: 1.1;
+}
+
+.metric__label {
+    font-size: var(--fs-xs);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.metric__delta {
+    font-size: var(--fs-xs);
+    color: var(--color-text-tertiary);
+    margin-top: 2px;
+}
+
+
+/* ---------- Графики (SVG) ---------- */
+.chart {
+    width: 100%;
+    height: 200px;
+    display: block;
+}
+
+.chart-container {
+    padding: var(--space-5);
+}
+
+.chart__line {
+    fill: none;
+    stroke: var(--color-accent);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.chart__area {
+    fill: var(--color-accent);
+    opacity: 0.10;
+}
+
+.chart__dot {
+    fill: var(--color-bg-elevated);
+    stroke: var(--color-accent);
+    stroke-width: 2;
+}
+
+.chart__grid {
+    stroke: var(--color-border-soft);
+    stroke-width: 1;
+    stroke-dasharray: 2 4;
+}
+
+.chart__axis-label {
+    font-size: 11px;
+    fill: var(--color-text-tertiary);
+    font-family: var(--font-base);
+}
+
+.chart-legend {
+    display: flex;
+    gap: var(--space-4);
+    padding: 0 var(--space-5) var(--space-5);
+    flex-wrap: wrap;
+}
+
+.chart-legend__item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--fs-xs);
+    color: var(--color-text-secondary);
+}
+
+.chart-legend__swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+
+/* ---------- Тематические теги (часто обсуждаемые темы) ---------- */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-5) var(--space-5);
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-accent-soft);
+    color: var(--color-accent);
+    border-radius: var(--radius-pill);
+    font-size: var(--fs-sm);
+    font-weight: 500;
+}
+
+.tag__count {
+    font-size: var(--fs-xs);
+    opacity: 0.75;
+}
+
+
+/* ---------- Скрининги (история тестов) ---------- */
+.screening-list {
+    padding: var(--space-2);
+}
+
+.screening-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-3);
+    border-radius: var(--radius-md);
+    transition: background var(--transition-fast);
+}
+
+.screening-item + .screening-item {
+    border-top: 1px solid var(--color-border-soft);
+}
+
+.screening-item__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    background: var(--color-accent-soft);
+    color: var(--color-accent);
+}
+
+.screening-item__info {
+    min-width: 0;
+}
+
+.screening-item__name {
+    font-size: var(--fs-base);
+    color: var(--color-text-primary);
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.screening-item__hint {
+    font-size: var(--fs-xs);
+    color: var(--color-text-secondary);
+}
+
+.screening-item__score {
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.screening-item__score-value {
+    font-size: var(--fs-md);
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.screening-item__score-hint {
+    font-size: var(--fs-xs);
+    color: var(--color-text-secondary);
+}
+
+/* Семафор по уровню (без слов «плохо/хорошо», только цвет) */
+.screening-item__score--low    .screening-item__score-value { color: var(--color-accent); }
+.screening-item__score--medium .screening-item__score-value { color: var(--color-tip-accent); }
+.screening-item__score--high   .screening-item__score-value { color: var(--color-warm); }
+
+.screening-item__action {
+    flex-shrink: 0;
+}
+
+
+/* ---------- Подписка ---------- */
+.subscription-card {
+    position: relative;
+    padding: var(--space-5);
+    background:
+        linear-gradient(135deg,
+            var(--color-accent-soft) 0%,
+            transparent 70%),
+        var(--color-bg-elevated);
+    border: 1px solid var(--color-border-medium);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.subscription-card__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.subscription-card__tier {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-3);
+    background: var(--color-accent);
+    color: var(--color-text-on-accent);
+    border-radius: var(--radius-pill);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.subscription-card__tier--free {
+    background: var(--color-text-secondary);
+}
+
+.subscription-card__title {
+    font-size: var(--fs-xl);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-1);
+}
+
+.subscription-card__hint {
+    font-size: var(--fs-sm);
+    color: var(--color-text-secondary);
+    line-height: var(--lh-relaxed);
+}
+
+.subscription-card__features {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-4) 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.subscription-card__feature {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    font-size: var(--fs-sm);
+    color: var(--color-text-primary);
+}
+
+.subscription-card__feature-icon {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    color: var(--color-accent);
+    margin-top: 2px;
+}
+
+.subscription-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border-soft);
+    flex-wrap: wrap;
+}
+
+
+/* ---------- Список чатов (история) ---------- */
+.chat-list {
+    padding: var(--space-2);
+}
+
+.chat-list-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: var(--space-4);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    color: inherit;
+    transition: background var(--transition-fast);
+}
+
+.chat-list-item + .chat-list-item {
+    border-top: 1px solid var(--color-border-soft);
+}
+
+.chat-list-item:hover {
+    background: var(--color-bg-overlay);
+}
+
+.chat-list-item__title {
+    font-size: var(--fs-base);
+    color: var(--color-text-primary);
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.chat-list-item__preview {
+    font-size: var(--fs-sm);
+    color: var(--color-text-secondary);
+    line-height: var(--lh-relaxed);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.chat-list-item__meta {
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.chat-list-item__date {
+    font-size: var(--fs-xs);
+    color: var(--color-text-tertiary);
+    white-space: nowrap;
+}

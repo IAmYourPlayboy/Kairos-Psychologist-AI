@@ -1,0 +1,61 @@
+/* ==========================================================================
+   ДИЗАЙН-ТОКЕНЫ КАЙРОСА — БАЗА (общие токены, не зависят от темы)
+   Цветовые токены живут в themes.css.
+   ========================================================================== */
+
+:root {
+    /* ---------- Шрифты ---------- */
+    --font-base: 'Golos Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+
+    /* Размеры (16px = 1rem, без перебора) */
+    --fs-xs:    13px;
+    --fs-sm:    14px;
+    --fs-base:  15px;        /* Основной размер интерфейса */
+    --fs-md:    16px;        /* Сообщения в чате — больше для читаемости в кризисе */
+    --fs-lg:    18px;
+    --fs-xl:    22px;
+    --fs-2xl:   28px;
+
+    --lh-tight:  1.3;
+    --lh-base:   1.5;
+    --lh-relaxed: 1.6;
+
+    /* ---------- Отступы (8-pt grid) ---------- */
+    --space-1:  4px;
+    --space-2:  8px;
+    --space-3:  12px;
+    --space-4:  16px;
+    --space-5:  20px;
+    --space-6:  24px;
+    --space-7:  32px;
+    --space-8:  40px;
+    --space-10: 56px;
+
+    /* ---------- Радиусы ---------- */
+    --radius-sm:    6px;
+    --radius-md:    10px;
+    --radius-lg:    14px;
+    --radius-xl:    20px;
+    --radius-pill:  999px;
+
+    /* ---------- Геометрия макета ---------- */
+    --sidebar-width:        280px;
+    --sidebar-width-collapsed: 64px;
+    --right-panel-width:    300px;
+    --topbar-height:        64px;
+
+    /* ---------- Анимации ---------- */
+    --transition-fast:    120ms ease-out;
+    --transition-base:    180ms ease-out;       /* Стандарт медтех: 150-200мс */
+    --transition-slow:    280ms ease-out;
+    --easing:             cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Уважение к пользователю с тревожными расстройствами */
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --transition-fast: 0ms;
+        --transition-base: 0ms;
+        --transition-slow: 0ms;
+    }
+}

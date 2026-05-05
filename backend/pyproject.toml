@@ -10,6 +10,15 @@ dependencies = [
     "pydantic-settings>=2.7.0",
     "python-dotenv>=1.0.0",
     "httpx>=0.28.0",
+
+    # === База данных (Блок 6a) ===
+    "sqlalchemy[asyncio]>=2.0.30",   # ORM с async-поддержкой
+    "aiosqlite>=0.20.0",              # SQLite драйвер для разработки
+    "asyncpg>=0.30.0",                # PostgreSQL драйвер для продакшена
+    "alembic>=1.13.0",                # Миграции БД
+
+    # === Агенты (Блоки 47-55) ===
+    "pyyaml>=6.0",                    # Сериализация эталонных статей в YAML
 ]
 
 [project.optional-dependencies]
