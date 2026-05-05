@@ -34,27 +34,52 @@ EXTRACT_SYSTEM_PROMPT = """\
    (medical_visits, army_recruitment), не транскрипцию русского.
 6. Возвращать строго валидный JSON-массив. Без объяснений вне JSON.
 
-Допустимые папки и подпапки (folder/subfolder):
-- identity (без подпапок)
-- childhood/family, childhood/school, childhood/events
-- family/parents, family/siblings, family/grandparents, family/extended
-- relationships/friends, relationships/romantic, relationships/school_peers, relationships/colleagues
-- work_school/current, work_school/past, work_school/performance
-- losses/death, losses/breakup, losses/relocation, losses/other
-- triggers/sensory, triggers/situational, triggers/relational
-- resources/people, resources/activities, resources/skills, resources/places
-- values (без подпапок)
-- health/body, health/sleep, health/illness, health/appearance, health/mental
-- crisis_history/past_attempts, crisis_history/past_episodes, crisis_history/protective_factors
-- goals/short_term, goals/long_term
-- routines/daily, routines/weekly, routines/rituals
-- custom/<твоё английское snake_case имя> — для всего что не вписывается выше.
+ВАЖНО — РАЗДЕЛЕНИЕ folder и subfolder:
+candidate_folder и candidate_subfolder — это ДВА РАЗНЫХ ПОЛЯ.
+НИКОГДА не пиши "family/siblings" в candidate_folder — это ОШИБКА.
+Правильно: candidate_folder = "family", candidate_subfolder = "siblings".
+В таблице ниже формат "родитель/потомок" — это просто список допустимых ПАР,
+а не одно значение. Каждую такую пару записывай в JSON как ДВЕ строки.
+
+Допустимые ПАРЫ (родитель → потомок):
+- родитель "identity": подпапка null (только null — без потомков).
+- родитель "childhood": потомки "family", "school", "events".
+- родитель "family": потомки "parents", "siblings", "grandparents", "extended".
+- родитель "relationships": потомки "friends", "romantic", "school_peers", "colleagues".
+- родитель "work_school": потомки "current", "past", "performance".
+- родитель "losses": потомки "death", "breakup", "relocation", "other".
+- родитель "triggers": потомки "sensory", "situational", "relational".
+- родитель "resources": потомки "people", "activities", "skills", "places".
+- родитель "values": подпапка null.
+- родитель "health": потомки "body", "sleep", "illness", "appearance", "mental".
+- родитель "crisis_history": потомки "past_attempts", "past_episodes", "protective_factors".
+- родитель "goals": потомки "short_term", "long_term".
+- родитель "routines": потомки "daily", "weekly", "rituals".
+- родитель "custom": в потомка пиши свободное английское snake_case имя
+  (medical_visits, army_recruitment, и т.п.) — для всего что не вписывается выше.
+
+ПРАВИЛЬНЫЙ пример факта:
+{
+  "summary": "Есть младший брат Егор",
+  "candidate_folder": "family",
+  "candidate_subfolder": "siblings",
+  "candidate_tags": ["younger-brother", "egor"],
+  "severity": 0.2,
+  "confidence": 0.95,
+  "quotes": [{"message_id": "msg-001", "text": "у меня есть младший брат Егор"}]
+}
+
+НЕПРАВИЛЬНЫЙ пример (НЕ ДЕЛАЙ ТАК):
+{
+  "candidate_folder": "family/siblings",  // СКЛЕИЛ через слэш — НЕЛЬЗЯ
+  "candidate_subfolder": null
+}
 
 Структура каждого факта в выходном JSON-массиве:
 {
   "summary": str (1-2 предложения),
-  "candidate_folder": str (одна из верхнеуровневых папок),
-  "candidate_subfolder": str | null (подпапка или null если папка её не требует),
+  "candidate_folder": str (ТОЛЬКО ОДНО СЛОВО из списка родителей выше: "family", "health", "routines" и т.д. — БЕЗ слэша),
+  "candidate_subfolder": str | null (ТОЛЬКО ОДНО СЛОВО — потомок из списка для этого родителя, ИЛИ null если родитель его не требует),
   "candidate_tags": [str, ...] (kebab-case, до 5),
   "severity": float (0.0-1.0),
   "confidence": float (0.0-1.0 — насколько ты уверен),

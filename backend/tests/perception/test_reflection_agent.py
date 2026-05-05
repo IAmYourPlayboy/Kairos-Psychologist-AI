@@ -197,6 +197,50 @@ async def test_empty_extract_advances_checkpoint(db_with_messages):
     assert result.last_processed_message_id == msg_ids[-1]
 
 
+async def test_auto_split_glued_folder(db_with_messages):
+    """LLM иногда склеивает "family/siblings" в candidate_folder.
+
+    Агент должен авто-расщепить на пару (family, siblings) вместо отбрасывания.
+    """
+    user_id = db_with_messages["user_id"]
+    msg_ids = db_with_messages["msg_ids"]
+
+    # Глюк LLM: candidate_folder = "family/siblings", candidate_subfolder = null
+    glued_response = json.dumps([
+        {
+            "summary": "Есть младший брат Егор",
+            "candidate_folder": "family/siblings",  # склеено!
+            "candidate_subfolder": None,
+            "candidate_tags": ["younger-brother"],
+            "severity": 0.2,
+            "confidence": 0.9,
+            "quotes": [{
+                "message_id": msg_ids[0],
+                "text": "у меня есть младший братишка егор",
+            }],
+        },
+    ], ensure_ascii=False)
+
+    with patch(
+        "app.core.llm.openai_compat.OpenAICompatProvider.generate",
+        new=AsyncMock(return_value=_llm(glued_response)),
+    ):
+        async with async_session_factory() as db:
+            agent = ReflectionAgent(db=db)
+            result = await agent.run_for_user(user_id)
+
+    # Должно быть создано 1 факт, не пропущено
+    assert result.facts_created == 1
+    assert result.candidates_skipped == 0
+
+    # И факт должен быть в правильной паре
+    async with async_session_factory() as db:
+        from sqlalchemy import select
+        f = (await db.execute(select(DossierFact))).scalar_one()
+        assert f.folder == "family"
+        assert f.subfolder == "siblings"
+
+
 async def test_invalid_folder_skipped(db_with_messages):
     """Кандидат с невалидной папкой пропускается, остальные обрабатываются."""
     user_id = db_with_messages["user_id"]

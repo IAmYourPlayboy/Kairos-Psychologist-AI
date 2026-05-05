@@ -100,6 +100,25 @@ class ReflectionAgent:
         for cand in candidates:
             folder = cand.get("candidate_folder")
             subfolder = cand.get("candidate_subfolder")
+
+            # Толерантность к LLM-ошибке: если модель склеила "folder/subfolder"
+            # в одно поле — расщепляем. Это частая ошибка маленьких моделей.
+            if (
+                isinstance(folder, str)
+                and "/" in folder
+                and not subfolder
+            ):
+                parent, _, child = folder.partition("/")
+                logger.info(
+                    "Auto-splitting candidate_folder %r into %r/%r",
+                    folder, parent, child,
+                )
+                folder = parent
+                subfolder = child
+                # Обновляем cand тоже, чтобы dedupe ниже работал с правильной парой
+                cand["candidate_folder"] = folder
+                cand["candidate_subfolder"] = subfolder
+
             if not is_valid_subfolder(folder, subfolder):
                 logger.warning(
                     "Skipping candidate with invalid folder %s/%s: %r",
