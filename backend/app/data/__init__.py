@@ -17,6 +17,11 @@ from app.data.models import (
     Subscription,
     User,
 )
+from app.data.dossier_models import (
+    DossierCheckpoint,
+    DossierFact,
+    DossierQuote,
+)
 
 __all__ = [
     # database
@@ -26,7 +31,7 @@ __all__ = [
     "dispose_engine",
     "create_all_tables",
     "drop_all_tables",
-    # models
+    # models — основа
     "Base",
     "User",
     "ChatSession",
@@ -34,4 +39,8 @@ __all__ = [
     "FeedbackEvent",
     "Subscription",
     "ScreeningResult",
+    # models — досье (Сессия 18+, слой восприятия)
+    "DossierFact",
+    "DossierQuote",
+    "DossierCheckpoint",
 ]
