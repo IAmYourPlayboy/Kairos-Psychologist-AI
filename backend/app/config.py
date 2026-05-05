@@ -40,6 +40,21 @@ class Settings(BaseSettings):
     # === CORS ===
     cors_origins: list[str] = ["http://localhost:3000"]
 
+    # === Слой восприятия (Фаза 0+) ===
+    # Флаг включения нового слоя восприятия (Фаза 4 → переключение).
+    # Пока false — работает старый rule-based pipeline.
+    # Удалится в Фазе 6, когда новый слой проверен.
+    use_perception_layer: bool = False
+
+    # Celery broker (тот же Redis, что и для Mood, но другая БД для разделения).
+    # Для разработки достаточно redis://localhost:6379/{1,2}
+    celery_broker_url: str = "redis://localhost:6379/1"
+    celery_result_backend: str = "redis://localhost:6379/2"
+
+    # Через сколько секунд после последнего сообщения запускать ReflectionAgent.
+    # 15 минут = пользователь точно ушёл, контекст разговора закончился.
+    reflection_delay_seconds: int = 15 * 60
+
     # === Логирование ===
     log_level: str = "info"
 
