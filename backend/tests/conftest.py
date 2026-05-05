@@ -8,10 +8,18 @@
     pytest -v                   # подробный вывод
 """
 
+import os
 import sys
 from pathlib import Path
 
 import pytest
+
+# КРИТИЧНО: устанавливаем DATABASE_URL для тестов ДО ЛЮБОГО импорта app.*
+# Это исключает порчу dev-базы (kairos_dev.db) если тесты дропают таблицы.
+# Отдельные тестовые файлы могут перезаписать DATABASE_URL под себя.
+os.environ.setdefault(
+    "DATABASE_URL", "sqlite+aiosqlite:///./kairos_test_default.db",
+)
 
 # Добавляем корень backend в sys.path, чтобы импорты "from app..." работали
 BACKEND_ROOT = Path(__file__).parent.parent

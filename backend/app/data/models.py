@@ -230,6 +230,11 @@ class Message(Base):
     prompt_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
     completion_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
+    # JSON-сериализация PerceptionReport (логирование для data flywheel + LoRA).
+    # Заполняется только когда use_perception_layer=True (Сессия 18+).
+    # Для role=user — содержит отчёт анализатора об этом сообщении.
+    perception_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     # Связи
     session: Mapped[ChatSession] = relationship(
         "ChatSession", back_populates="messages"
