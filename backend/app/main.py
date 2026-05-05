@@ -49,7 +49,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         pass  # Провайдер не был инициализирован
     _reset_provider()
 
-    # 2. БД
+    # 2. Redis (слой восприятия — Сессия 18+)
+    try:
+        from app.core.perception.redis_client import close_redis
+        await close_redis()
+    except Exception:
+        logger.exception("Error closing Redis (non-fatal)")
+
+    # 3. БД
     await dispose_engine()
 
     logger.info("Kairos завершает работу")
