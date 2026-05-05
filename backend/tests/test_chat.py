@@ -41,6 +41,18 @@ from app.data.database import create_all_tables, drop_all_tables
 # ============================================================================
 
 
+@pytest.fixture(autouse=True)
+def force_legacy_pipeline(monkeypatch):
+    """Все тесты этого файла проверяют СТАРУЮ ветку chat.py.
+
+    Принудительно выключаем флаг, чтобы тест не зависел от .env разработчика.
+    После Фазы 6 (когда старый код удалён) этот файл будет удалён —
+    тесты новой ветки в test_chat_perception.py.
+    """
+    from app.config import settings
+    monkeypatch.setattr(settings, "use_perception_layer", False)
+
+
 @pytest_asyncio.fixture
 async def app_with_db() -> AsyncIterator[Any]:
     """Создаём чистую БД перед каждым тестом и удаляем после."""

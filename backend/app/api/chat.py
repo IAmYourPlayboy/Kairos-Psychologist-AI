@@ -183,6 +183,22 @@ async def chat(
 
     await db.commit()
 
+    # === 7. Запланировать рефлексию через 15 минут ===
+    # Только если включён слой восприятия и есть user_id (не гость).
+    # ReflectionAgent сам понимает stale-расписание: если пользователь
+    # продолжает писать, новый scheduled_at перебьёт старый и таск-старичок
+    # выйдет ничего не сделав.
+    if settings.use_perception_layer and session.user_id:
+        try:
+            from app.core.perception.reflection_tasks import schedule_reflection
+            await schedule_reflection(session.user_id)
+        except Exception:
+            # Если Celery/Redis недоступны — не валим основной поток.
+            # Без рефлексии бот всё равно отвечает, досье просто не наполнится.
+            logger.exception(
+                "Failed to schedule reflection (non-fatal)",
+            )
+
     logger.info(
         "Chat: session=%s perception=%s crisis=%s reply_len=%d response_ms=%s",
         session.id[:8],
