@@ -14,3 +14,10 @@ import { twMerge } from "tailwind-merge";
 export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
 }
+
+/**
+ * Tailwind classes для правого padding'а контентной области, оставляющего место
+ * под RightDock (260px / 280px на md/lg). Используется на всех страницах,
+ * рендерящихся внутри AppShell.
+ */
+export const RIGHT_DOCK_PADDING = "md:pr-[260px] lg:pr-[280px]";

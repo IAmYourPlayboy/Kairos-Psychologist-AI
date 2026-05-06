@@ -6,7 +6,7 @@ import { Check, Moon, Settings as SettingsIcon, Sun } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { cn } from "@/lib/cn";
+import { cn, RIGHT_DOCK_PADDING } from "@/lib/cn";
 import { useTheme } from "@/hooks/useTheme";
 import { useThemeTokens } from "@/hooks/useThemeTokens";
 import { useWallpaper } from "@/hooks/useWallpaper";
@@ -25,7 +25,7 @@ export default function SettingsPage() {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <div className="flex-1 w-full overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-12 md:pr-[260px] lg:pr-[280px]">
+    <div className={cn("flex-1 w-full overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-12", RIGHT_DOCK_PADDING)}>
       <div className="max-w-3xl mx-auto space-y-8 pb-10">
         <motion.div
           initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}

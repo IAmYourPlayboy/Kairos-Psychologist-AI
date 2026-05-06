@@ -2,7 +2,7 @@
 
 import DossierView from "@/components/Dossier/DossierView";
 import { useSession } from "@/hooks/useSession";
-import { cn } from "@/lib/cn";
+import { cn, RIGHT_DOCK_PADDING } from "@/lib/cn";
 import { useThemeTokens } from "@/hooks/useThemeTokens";
 
 /**
@@ -24,7 +24,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex-1 w-full overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-12 md:pr-[260px] lg:pr-[280px]">
+    <div className={cn("flex-1 w-full overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-12", RIGHT_DOCK_PADDING)}>
       <DossierView guestId={guestId} />
     </div>
   );

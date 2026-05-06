@@ -7,7 +7,7 @@ import CrisisPanel from "@/components/Crisis/CrisisPanel";
 import SOSButton from "@/components/Crisis/SOSButton";
 import MessageFeedback from "@/components/Feedback/MessageFeedback";
 import SessionFeedback from "@/components/Feedback/SessionFeedback";
-import { cn } from "@/lib/cn";
+import { cn, RIGHT_DOCK_PADDING } from "@/lib/cn";
 import { useChat } from "@/hooks/useChat";
 import { useSidebar } from "@/hooks/useSidebar";
 import { useThemeTokens } from "@/hooks/useThemeTokens";
@@ -64,7 +64,7 @@ export default function ChatContainer() {
   // Padding нужен в трёх местах (messages, error, input).
   // pr учитывает ширину RightDock (260/280px), pl расширяется когда сайдбар свёрнут.
   const sidebarPadding = cn(
-    "md:pr-[260px] lg:pr-[280px]",
+    RIGHT_DOCK_PADDING,
     !isSidebarOpen && "md:pl-16 lg:pl-24",
   );
 
