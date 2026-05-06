@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { Check, Moon, Settings as SettingsIcon, Sun } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -22,13 +22,15 @@ export default function SettingsPage() {
   const t = useThemeTokens();
   const { isDark, setTheme } = useTheme();
   const { wallpaperId, setWallpaperId } = useWallpaper();
+  const shouldReduceMotion = useReducedMotion();
 
   return (
     <div className="flex-1 w-full overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-12 md:pr-[260px] lg:pr-[280px]">
       <div className="max-w-3xl mx-auto space-y-8 pb-10">
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={shouldReduceMotion ? { duration: 0 } : undefined}
           className="flex items-center gap-4"
         >
           <div
@@ -52,9 +54,9 @@ export default function SettingsPage() {
 
         {/* Тема */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
+          transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.05 }}
         >
           <Card className={cn(t.glassPanel, "p-5")}>
             <h2 className={cn("font-medium mb-3", t.textMain)}>Тема</h2>
@@ -95,9 +97,9 @@ export default function SettingsPage() {
 
         {/* Обои */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.1 }}
         >
           <Card className={cn(t.glassPanel, "p-5")}>
             <h2 className={cn("font-medium mb-3", t.textMain)}>Обои</h2>

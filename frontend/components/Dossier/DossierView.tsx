@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { Folder, ShieldAlert, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -26,6 +26,7 @@ interface DossierViewProps {
  */
 export default function DossierView({ guestId }: DossierViewProps) {
   const t = useThemeTokens();
+  const shouldReduceMotion = useReducedMotion();
   const [facts, setFacts] = useState<DossierFact[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isWiping, setIsWiping] = useState(false);
@@ -123,8 +124,9 @@ export default function DossierView({ guestId }: DossierViewProps) {
   return (
     <div className="max-w-3xl mx-auto p-4 space-y-6">
       <motion.header
-        initial={{ opacity: 0, y: 10 }}
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={shouldReduceMotion ? { duration: 0 } : undefined}
       >
         <h1 className={cn("text-2xl font-semibold tracking-tight", t.textMain)}>
           Что знает Кайрос
@@ -138,9 +140,9 @@ export default function DossierView({ guestId }: DossierViewProps) {
       {Object.entries(byFolder).map(([folder, folderFacts], folderIdx) => (
         <motion.section
           key={folder}
-          initial={{ opacity: 0, y: 10 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: folderIdx * 0.05 }}
+          transition={shouldReduceMotion ? { duration: 0 } : { delay: folderIdx * 0.05 }}
         >
           <div className="flex items-center gap-2 mb-2">
             <Folder className={cn("size-4", t.textMuted)} />
