@@ -15,6 +15,11 @@ import {
   DARK_HOUR_START,
   THEME_STORAGE_KEY,
 } from "@/lib/theme-config";
+import {
+  DEFAULT_WALLPAPER_ID,
+  getWallpaperById,
+  type Wallpaper,
+} from "@/lib/wallpapers";
 
 // ============================================================================
 // THEME CONTEXT
@@ -257,16 +262,84 @@ export function useSessionContext(): SessionContextValue {
 }
 
 // ============================================================================
+// WALLPAPER CONTEXT
+// ============================================================================
+//
+// Без Context'а Background и Settings используют ОТДЕЛЬНЫЕ useState — и
+// настройка обоев в Settings не доходит до Background до перезагрузки.
+// Та же проблема которую KairosProviders уже решил для theme/sidebar/session.
+
+const WALLPAPER_STORAGE_KEY = "kairos.wallpaper-id";
+
+interface WallpaperContextValue {
+  wallpaperId: string;
+  wallpaper: Wallpaper;
+  setWallpaperId: (id: string) => void;
+  mounted: boolean;
+}
+
+const WallpaperContext = createContext<WallpaperContextValue | null>(null);
+
+function WallpaperProvider({ children }: { children: ReactNode }) {
+  const [wallpaperId, setWallpaperIdState] = useState<string>(DEFAULT_WALLPAPER_ID);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const saved = localStorage.getItem(WALLPAPER_STORAGE_KEY);
+      if (saved) setWallpaperIdState(saved);
+    } catch {
+      // тихо
+    }
+    setMounted(true);
+  }, []);
+
+  const setWallpaperId = useCallback((id: string) => {
+    setWallpaperIdState(id);
+    try {
+      localStorage.setItem(WALLPAPER_STORAGE_KEY, id);
+    } catch {
+      // тихо
+    }
+  }, []);
+
+  const value = useMemo<WallpaperContextValue>(() => {
+    const wallpaper: Wallpaper = getWallpaperById(wallpaperId);
+    return { wallpaperId, wallpaper, setWallpaperId, mounted };
+  }, [wallpaperId, setWallpaperId, mounted]);
+
+  return (
+    <WallpaperContext.Provider value={value}>
+      {children}
+    </WallpaperContext.Provider>
+  );
+}
+
+export function useWallpaperContext(): WallpaperContextValue {
+  const ctx = useContext(WallpaperContext);
+  if (!ctx) {
+    return {
+      wallpaperId: DEFAULT_WALLPAPER_ID,
+      wallpaper: getWallpaperById(DEFAULT_WALLPAPER_ID),
+      setWallpaperId: () => {},
+      mounted: false,
+    };
+  }
+  return ctx;
+}
+
+// ============================================================================
 // COMBINED PROVIDER
 // ============================================================================
 
 /**
- * Корневой провайдер для трёх связанных Context'ов: theme / sidebar / session.
+ * Корневой провайдер для четырёх связанных Context'ов:
+ * theme / sidebar / session / wallpaper.
  *
- * Зачем нужен: до этой версии useTheme, useSidebar, useSession использовали
- * локальный useState. Каждый вызов создавал ОТДЕЛЬНОЕ состояние, поэтому
- * ThemeToggle.toggle() менял локальный state, но AppShell его не видел —
- * у него было своё состояние. Аналогично для сайдбара и сессий.
+ * Зачем нужен: до этой версии useTheme, useSidebar, useSession, useWallpaper
+ * использовали локальный useState. Каждый вызов создавал ОТДЕЛЬНОЕ состояние,
+ * поэтому изменения не пропагировались между компонентами.
  *
  * Решение: вынести state в Context (один раз создаётся, все читают).
  * Монтируется в frontend/app/layout.tsx, оборачивает <AppShell>.
@@ -275,7 +348,9 @@ export function KairosProviders({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider>
       <SidebarProvider>
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          <WallpaperProvider>{children}</WallpaperProvider>
+        </SessionProvider>
       </SidebarProvider>
     </ThemeProvider>
   );
