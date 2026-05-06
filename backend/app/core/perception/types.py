@@ -18,6 +18,24 @@ from pydantic import BaseModel, Field, field_validator
 RiskLevel = Literal["normal", "elevated", "high", "immediate"]
 
 
+def _normalize_str(v: object, default: str, limit: int) -> str:
+    """Нормализовать «не знаю» от LLM в дефолтное значение, обрезать длинные строки.
+
+    Используется в `field_validator(mode='before')` для строковых полей
+    PerceptionReport. Сценарии:
+    - v is None / "" / "   " / 0 / False / []: возвращаем `default`.
+    - v длиннее `limit` символов: обрезаем до `limit`.
+    - иначе: возвращаем str(v).
+
+    Контракт спеки: `if not v or (isinstance(v, str) and not v.strip())`.
+    `not v` ловит None / пустую строку / 0 / False — на случай если LLM
+    вернёт нестроковые значения (защитное программирование).
+    """
+    if not v or (isinstance(v, str) and not v.strip()):
+        return default
+    return str(v)[:limit]
+
+
 class PerceptionReport(BaseModel):
     """Структурированный отчёт анализатора об одном сообщении пользователя.
 
@@ -103,30 +121,22 @@ class PerceptionReport(BaseModel):
     @field_validator("dominant_emotion", mode="before")
     @classmethod
     def _default_dominant_emotion(cls, v: object) -> str:
-        if v is None or (isinstance(v, str) and not v.strip()):
-            return "неизвестно"
-        return str(v)[:50]
+        return _normalize_str(v, "неизвестно", 50)
 
     @field_validator("theme", mode="before")
     @classmethod
     def _default_theme(cls, v: object) -> str:
-        if v is None or (isinstance(v, str) and not v.strip()):
-            return "неизвестно"
-        return str(v)[:100]
+        return _normalize_str(v, "неизвестно", 100)
 
     @field_validator("what_user_needs", mode="before")
     @classmethod
     def _default_what_user_needs(cls, v: object) -> str:
-        if v is None or (isinstance(v, str) and not v.strip()):
-            return "неясно"
-        return str(v)[:500]
+        return _normalize_str(v, "неясно", 500)
 
     @field_validator("inner_monologue", mode="before")
     @classmethod
     def _default_inner_monologue(cls, v: object) -> str:
-        if v is None or (isinstance(v, str) and not v.strip()):
-            return "(нет мыслей)"
-        return str(v)[:2000]
+        return _normalize_str(v, "(нет мыслей)", 2000)
 
 
 # ============================================================================
