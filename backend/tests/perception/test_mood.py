@@ -200,3 +200,34 @@ def test_warmth_delta_for_extended_emotion_set():
     assert _emotion_warmth_delta("раздражение") == -0.05
     # Неизвестные — 0.0
     assert _emotion_warmth_delta("радость") == 0.0
+
+
+def test_emotion_normalization_handles_word_forms():
+    """Прилагательные / наречия / устаревшие написания → канон. форма."""
+    from app.core.perception.mood import _normalize_emotion
+
+    # Прилагательные → существительные
+    assert _normalize_emotion("грустный") == "грусть"
+    assert _normalize_emotion("одинокий") == "одиночество"
+    assert _normalize_emotion("безнадежный") == "безнадёжность"
+    assert _normalize_emotion("унылый") == "уныние"
+    # Наречия
+    assert _normalize_emotion("страшно") == "страх"
+    assert _normalize_emotion("грустно") == "грусть"
+    # Уже в канонической форме — не меняется
+    assert _normalize_emotion("страх") == "страх"
+    # Регистр и пробелы
+    assert _normalize_emotion("  Страшно  ") == "страх"
+
+
+def test_classification_works_through_normalization():
+    """LLM может вернуть любую словоформу — категория определится правильно."""
+    from app.core.perception.mood import _classify_emotion
+
+    # Все эти варианты — vulnerable, через нормализацию
+    assert _classify_emotion("грустно") == "vulnerable"
+    assert _classify_emotion("страшный") == "vulnerable"
+    assert _classify_emotion("безнадежный") == "vulnerable"
+    # Гневные тоже
+    assert _classify_emotion("злой") == "angry"
+    assert _classify_emotion("раздражённый") == "angry"
