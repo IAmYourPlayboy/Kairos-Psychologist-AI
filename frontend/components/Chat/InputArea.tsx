@@ -87,10 +87,10 @@ export default function InputArea({
             disabled={disabled || !text.trim()}
             aria-label="Отправить"
             size="icon"
+            variant={text.trim() ? "default" : "ghost"}
             className={cn(
               "size-10 rounded-full shrink-0",
-              text.trim() ? cn(t.btnPrimary, "shadow-lg") : "bg-transparent",
-              !text.trim() && cn(t.textMuted, t.btnHover),
+              text.trim() ? cn(t.btnPrimary, "shadow-lg") : cn(t.textMuted, t.btnHover),
             )}
           >
             <motion.div
