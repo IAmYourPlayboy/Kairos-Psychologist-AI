@@ -40,12 +40,7 @@ class Settings(BaseSettings):
     # === CORS ===
     cors_origins: list[str] = ["http://localhost:3000"]
 
-    # === Слой восприятия (Фаза 0+) ===
-    # Флаг включения нового слоя восприятия (Фаза 4 → переключение).
-    # Пока false — работает старый rule-based pipeline.
-    # Удалится в Фазе 6, когда новый слой проверен.
-    use_perception_layer: bool = False
-
+    # === Слой восприятия (Сессия 18+) ===
     # Celery broker (тот же Redis, что и для Mood, но другая БД для разделения).
     # Для разработки достаточно redis://localhost:6379/{1,2}
     celery_broker_url: str = "redis://localhost:6379/1"

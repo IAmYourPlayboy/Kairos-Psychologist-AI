@@ -147,7 +147,8 @@ class ChatSession(Base):
     )
 
     # Метрики сессии (для data flywheel)
-    branch: Mapped[str | None] = mapped_column(String(1), nullable=True)  # "A" или "B"
+    # Поле branch (rule-based селектор A/B) удалено в Сессии 18 —
+    # теперь crisis_level определяется через PerceptionReport.
     crisis_level_max: Mapped[str] = mapped_column(
         String(20), default="normal", nullable=False
     )

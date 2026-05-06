@@ -1,7 +1,8 @@
-"""Интеграционные тесты /api/chat при включённом use_perception_layer.
+"""Интеграционные тесты /api/chat (новый слой восприятия).
 
-LLM мокается ДВАЖДЫ (анализатор + основной), потому что новая ветка
-делает два последовательных вызова.
+LLM мокается ДВАЖДЫ (анализатор + основной), потому что цикл
+делает два последовательных вызова: PerceptionPipeline сначала зовёт
+MessageAnalyzer, потом основную LLM.
 """
 
 from __future__ import annotations
@@ -21,9 +22,6 @@ from httpx import ASGITransport, AsyncClient
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///./kairos_test_chat_perception.db"
 os.environ["LLM_API_KEY"] = "test-key"
 os.environ["LLM_MODEL"] = "test-model"
-# USE_PERCEPTION_LAYER подменяется через monkeypatch ниже,
-# чтобы перебить кешированное settings, если другой тест-файл импортировал
-# settings раньше.
 
 from app.core.llm.base import LLMResponse, UsageStats
 from app.data.database import create_all_tables, drop_all_tables
@@ -53,17 +51,6 @@ def _analyzer_json(risk: str = "normal") -> str:
         },
         ensure_ascii=False,
     )
-
-
-@pytest.fixture(autouse=True)
-def enable_perception_flag(monkeypatch):
-    """Принудительно включаем флаг для всех тестов файла.
-
-    Это критично: обычный os.environ не сработает, если settings уже
-    закеширован после импорта другим тестовым файлом.
-    """
-    from app.config import settings
-    monkeypatch.setattr(settings, "use_perception_layer", True)
 
 
 @pytest_asyncio.fixture
