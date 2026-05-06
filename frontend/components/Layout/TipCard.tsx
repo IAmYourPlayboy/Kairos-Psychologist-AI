@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Lightbulb, X } from "lucide-react";
 
@@ -20,22 +20,29 @@ function getDayKey(): string {
 /**
  * Плавающая карточка «Совет дня» в правом доке.
  * Закрывается × → не показывается до следующего дня.
+ *
+ * Видимость определяется только после маунта (mounted флаг) —
+ * иначе SSR-рендер не совпадал бы с клиентским и React выдавал бы
+ * hydration mismatch.
  */
 export function TipCard() {
   const t = useThemeTokens();
   const tip = getTipOfTheDay();
 
-  const [isVisible, setIsVisible] = useState(() => {
-    if (typeof window === "undefined") return false;
+  const [mounted, setMounted] = useState(false);
+  const [isDismissedToday, setIsDismissedToday] = useState(false);
+
+  useEffect(() => {
     try {
-      return localStorage.getItem(STORAGE_KEY) !== getDayKey();
+      setIsDismissedToday(localStorage.getItem(STORAGE_KEY) === getDayKey());
     } catch {
-      return true;
+      setIsDismissedToday(false);
     }
-  });
+    setMounted(true);
+  }, []);
 
   const handleDismiss = () => {
-    setIsVisible(false);
+    setIsDismissedToday(true);
     try {
       localStorage.setItem(STORAGE_KEY, getDayKey());
     } catch {
@@ -43,9 +50,12 @@ export function TipCard() {
     }
   };
 
+  // До маунта рендерим пустоту — никаких визуальных артефактов на гидрации.
+  if (!mounted) return null;
+
   return (
     <AnimatePresence>
-      {isVisible && (
+      {!isDismissedToday && (
         <motion.div
           initial={{ opacity: 0, scale: 0.95, height: 0 }}
           animate={{ opacity: 1, scale: 1, height: "auto" }}
