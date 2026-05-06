@@ -26,7 +26,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Toaster theme={isDark ? "dark" : "light"} position="top-center" />
       <Background />
 
-      <div className="relative z-10 flex h-full w-full">
+      <div className="relative z-content flex h-full w-full">
         <Sidebar />
         <FloatingButtons />
         <main className="flex-1 flex flex-col h-full w-full relative overflow-hidden">
