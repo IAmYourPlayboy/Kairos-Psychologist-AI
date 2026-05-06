@@ -62,6 +62,27 @@ def test_empty_inner_monologue_normalizes():
     assert report.inner_monologue == "(нет мыслей)"
 
 
+def test_none_dominant_emotion_normalizes_to_unknown():
+    """JSON null from LLM → Python None → normalized to default."""
+    report = PerceptionReport(**_full_report(dominant_emotion=None))
+    assert report.dominant_emotion == "неизвестно"
+
+
+def test_none_theme_normalizes_to_unknown():
+    report = PerceptionReport(**_full_report(theme=None))
+    assert report.theme == "неизвестно"
+
+
+def test_none_what_user_needs_normalizes():
+    report = PerceptionReport(**_full_report(what_user_needs=None))
+    assert report.what_user_needs == "неясно"
+
+
+def test_none_inner_monologue_normalizes():
+    report = PerceptionReport(**_full_report(inner_monologue=None))
+    assert report.inner_monologue == "(нет мыслей)"
+
+
 # ============================================================================
 # Truncation длинных строк
 # ============================================================================
