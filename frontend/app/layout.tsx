@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Golos_Text } from "next/font/google";
 
 import { AppShell } from "@/components/Layout/AppShell";
+import { KairosProviders } from "@/components/Layout/KairosProviders";
 import { ThemeScript } from "@/components/Layout/ThemeScript";
 
 import "./globals.css";
@@ -46,7 +47,9 @@ export default function RootLayout({
         <ThemeScript />
       </head>
       <body className="font-sans antialiased">
-        <AppShell>{children}</AppShell>
+        <KairosProviders>
+          <AppShell>{children}</AppShell>
+        </KairosProviders>
       </body>
     </html>
   );
