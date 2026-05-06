@@ -1,27 +1,29 @@
 """POST /api/chat — главный эндпоинт диалога с ботом.
 
-Поток обработки:
-    1. Получить сообщение пользователя
-    2. Определить уровень кризиса (assess_crisis_level)
-    3. Выбрать ветку (A — мобилизация или B — стабилизация)
-    4. Собрать system prompt (с учётом ветки и кризиса)
-    5. Сформировать messages = [system, ...history, user]
-    6. Вызвать LLM
-    7. Сохранить запрос и ответ в БД (data flywheel)
-    8. Вернуть клиенту: ответ + crisis_level + контакты
+Поток обработки (Сессия 18+, после удаления rule-based слоя):
 
-Особое поведение:
-    - При crisis_level=immediate — бот всегда даёт контакты, даже если LLM упал.
-    - Сессия создаётся автоматически при первом сообщении.
+1. PerceptionPipeline.process_message():
+   - MessageAnalyzer (LLM-вызов) → PerceptionReport
+     (risk_level + emotion + theme + folder_hints + ...)
+   - MoodService.update_from_report → 6 осей в Redis
+   - Подтяжка релевантных фактов по folder_hints
+   - PromptBuilder → главный system prompt
+   - Основная LLM → reply
+2. crisis_level берётся из report.risk_level.
+3. perception_json сохраняется в user_msg для data flywheel.
+4. Никакого rule-based fallback — при ошибке честное «извини, не могу»
+   (по дизайн-решению §9 spec).
+5. После commit'а планируется ReflectionAgent через 15 минут (если есть user_id).
+
+Сессия создаётся автоматически при первом сообщении.
 """
 
 from __future__ import annotations
 
 import logging
-import time
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.schemas import (
@@ -30,12 +32,7 @@ from app.api.schemas import (
     CrisisContactDTO,
 )
 from app.config import settings
-from app.core.branch_selector import select_branch
 from app.core.crisis.contacts import get_crisis_contacts
-from app.core.crisis.detector import assess_crisis_level
-from app.core.llm.base import Message
-from app.core.llm.factory import get_provider
-from app.core.prompts.builder import build_system_prompt
 from app.data.database import get_db
 from app.data.models import ChatSession, Message as MessageModel
 
@@ -44,22 +41,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
-# ============================================================================
-# Жёстко-зашитые ответы для критических кейсов
-# (используются если LLM недоступен в кризисный момент)
-# ============================================================================
-
-_FALLBACK_IMMEDIATE = (
-    "Я слышу тебя. Прямо сейчас позвони по одному из этих номеров — "
-    "там помогут.\n\n"
-    "📞 112 — экстренные службы (работает без SIM)\n"
-    "📞 8-800-2000-122 — детский телефон доверия\n"
-    "📞 8-800-333-44-34 — психологическая помощь МЧС (круглосуточно, бесплатно)\n\n"
-    "Я буду здесь, когда вернёшься."
-)
-
-_FALLBACK_GENERIC = (
-    "Извини, я сейчас не могу ответить. Попробуй ещё раз через минуту."
+# Текст для пользователя, когда PerceptionPipeline упал.
+# Это единственный «fallback» теперь: честное сообщение и SOS-кнопка
+# в UI остаётся доступна со статичными контактами.
+_PERCEPTION_FALLBACK = (
+    "Извини, я сейчас не могу отвечать. "
+    "Если это срочно — нажми SOS вверху для номеров помощи."
 )
 
 
@@ -74,70 +61,55 @@ async def chat(
 ) -> ChatResponse:
     """Обработать сообщение пользователя и вернуть ответ бота.
 
-    Этот эндпоинт — сердце продукта. Он связывает все компоненты:
-    кризисную детекцию, выбор ветки, промпт, LLM и логирование в БД.
+    Этот эндпоинт — сердце продукта. Связывает все компоненты слоя
+    восприятия: анализатор, mood, досье, промпт-сборку, LLM и
+    логирование в БД.
     """
-    # === 1. Кризисная детекция ===
-    crisis_level = assess_crisis_level(request.message)
-
-    # === 2. Выбор ветки ===
-    branch = select_branch(request.message)
-
-    # === 3. Кризисные контакты (для ответа клиенту) ===
-    crisis_contacts: list[CrisisContactDTO] = []
-    if crisis_level != "normal":
-        contacts = get_crisis_contacts(request.age_group)
-        crisis_contacts = [
-            CrisisContactDTO(
-                name=c.name, phone=c.phone, description=c.description
-            )
-            for c in contacts
-        ]
-
-    # === 4. Подготовка / создание сессии в БД ===
+    # === 1. Подготовка / создание сессии ===
     session_id = request.session_id or str(uuid4())
     session = await _get_or_create_session(
         db,
         session_id=session_id,
         guest_id=request.guest_id,
-        branch=branch,
-        crisis_level=crisis_level,
     )
 
-    # === 5. Сохранить пользовательское сообщение ===
+    # === 2. Сохранить пользовательское сообщение (без crisis_level пока) ===
     user_message_id = str(uuid4())
     user_msg = MessageModel(
         id=user_message_id,
         session_id=session.id,
         role="user",
         content=request.message,
-        crisis_level=crisis_level,
     )
     db.add(user_msg)
 
-    # === 6. Собрать промпт и историю для LLM ===
-    system_prompt = build_system_prompt(
-        branch=branch,
-        crisis_level=crisis_level,
-        # Не используем динамический router пока (нет distress_score без NLP).
-        # Включится в Блоке 12.
-        use_router=False,
+    # === 3. Прогон через PerceptionPipeline ===
+    reply_text, metrics, crisis_level, perception_json = (
+        await _process_with_perception_layer(
+            db=db,
+            session=session,
+            user_message=request.message,
+            history=[
+                {"role": h.role, "content": h.content}
+                for h in request.history
+            ],
+        )
     )
+    user_msg.perception_json = perception_json
+    user_msg.crisis_level = crisis_level
 
-    llm_messages: list[Message] = [Message(role="system", content=system_prompt)]
-    # Добавляем историю (последние 50 сообщений уже ограничено схемой)
-    for hist_msg in request.history:
-        llm_messages.append(Message(role=hist_msg.role, content=hist_msg.content))
-    # Текущее сообщение пользователя
-    llm_messages.append(Message(role="user", content=request.message))
+    # === 4. Кризисные контакты (на основе финального crisis_level) ===
+    crisis_contacts: list[CrisisContactDTO] = []
+    if crisis_level != "normal":
+        contacts = get_crisis_contacts(request.age_group)
+        crisis_contacts = [
+            CrisisContactDTO(
+                name=c.name, phone=c.phone, description=c.description,
+            )
+            for c in contacts
+        ]
 
-    # === 7. Вызов LLM ===
-    reply_text, metrics = await _call_llm_with_fallback(
-        llm_messages=llm_messages,
-        crisis_level=crisis_level,
-    )
-
-    # === 8. Сохранить ответ бота ===
+    # === 5. Сохранить ответ бота ===
     bot_message_id = str(uuid4())
     bot_msg = MessageModel(
         id=bot_message_id,
@@ -151,18 +123,31 @@ async def chat(
     )
     db.add(bot_msg)
 
-    # === 9. Обновить счётчик сообщений сессии ===
+    # === 6. Обновить счётчик и максимальный кризис сессии ===
     session.message_count += 2  # user + assistant
-    # Поднимаем максимальный кризис если сейчас выше
     if _crisis_priority(crisis_level) > _crisis_priority(session.crisis_level_max):
         session.crisis_level_max = crisis_level
 
     await db.commit()
 
+    # === 7. Запланировать рефлексию через 15 минут (если есть user_id) ===
+    # ReflectionAgent сам понимает stale-расписание: если пользователь
+    # продолжает писать, новый scheduled_at перебьёт старый и таск-старичок
+    # выйдет ничего не сделав.
+    if session.user_id:
+        try:
+            from app.core.perception.reflection_tasks import schedule_reflection
+            await schedule_reflection(session.user_id)
+        except Exception:
+            # Если Celery/Redis недоступны — не валим основной поток.
+            # Без рефлексии бот всё равно отвечает, досье просто не наполнится.
+            logger.exception(
+                "Failed to schedule reflection (non-fatal)",
+            )
+
     logger.info(
-        "Chat: session=%s branch=%s crisis=%s reply_len=%d response_ms=%s",
+        "Chat: session=%s crisis=%s reply_len=%d response_ms=%s",
         session.id[:8],
-        branch,
         crisis_level,
         len(reply_text),
         metrics.get("response_time_ms"),
@@ -174,13 +159,67 @@ async def chat(
         message_id=bot_message_id,
         crisis_level=crisis_level,
         crisis_contacts=crisis_contacts,
-        branch=branch,
+        # branch больше не используется (Сессия 18+, удалён rule-based селектор).
+        # Оставляем поле в схеме как None для бэк-совместимости со старыми
+        # клиентами. После Блока 13 поле уйдёт из схемы.
+        branch=None,
         response_time_ms=metrics.get("response_time_ms"),
         prompt_tokens=metrics.get("prompt_tokens"),
         completion_tokens=metrics.get("completion_tokens"),
-        # llm_error пробрасываем только в debug-режиме (для разработки)
         llm_error=metrics.get("llm_error") if settings.debug else None,
     )
+
+
+# ============================================================================
+# Реализация PerceptionPipeline-вызова
+# ============================================================================
+
+
+async def _process_with_perception_layer(
+    *,
+    db: AsyncSession,
+    session: ChatSession,
+    user_message: str,
+    history: list[dict[str, str]],
+) -> tuple[str, dict, str, str | None]:
+    """Прогнать сообщение через PerceptionPipeline.
+
+    Returns:
+        (reply_text, metrics, crisis_level, perception_json)
+    """
+    # Импорты внутри функции, чтобы Redis-клиент создавался лениво
+    # (модуль chat.py может быть импортирован при тестах без Redis).
+    from app.core.perception.pipeline import PerceptionPipeline
+    from app.core.perception.redis_client import get_redis
+
+    metrics: dict = {}
+
+    try:
+        pipeline = PerceptionPipeline(db=db, redis_client=get_redis())
+        result = await pipeline.process_message(
+            user_id=session.user_id,
+            session_id=session.id,
+            user_message=user_message,
+            history=history,
+        )
+        metrics["response_time_ms"] = result.response_time_ms
+        metrics["prompt_tokens"] = result.prompt_tokens
+        metrics["completion_tokens"] = result.completion_tokens
+        return (
+            result.reply,
+            metrics,
+            result.report.risk_level,
+            result.report.model_dump_json(),
+        )
+
+    except Exception as e:  # noqa: BLE001 — мы намеренно ловим всё
+        # По дизайн-решению §9 spec: rule-based fallback нет.
+        # Честное сообщение пользователю + SOS-кнопка в UI остаётся.
+        logger.exception("Perception pipeline failed: %s", e)
+        metrics["llm_error"] = (
+            f"perception_failed: {type(e).__name__}: {e}"
+        )
+        return _PERCEPTION_FALLBACK, metrics, "normal", None
 
 
 # ============================================================================
@@ -193,14 +232,8 @@ async def _get_or_create_session(
     *,
     session_id: str,
     guest_id: str | None,
-    branch: str,
-    crisis_level: str,
 ) -> ChatSession:
-    """Получить существующую сессию или создать новую.
-
-    Сессия идентифицируется по session_id (генерируется на клиенте).
-    Если её ещё нет в БД — создаём.
-    """
+    """Получить существующую сессию или создать новую."""
     existing = await db.get(ChatSession, session_id)
     if existing is not None:
         return existing
@@ -208,12 +241,10 @@ async def _get_or_create_session(
     new_session = ChatSession(
         id=session_id,
         guest_id=guest_id,
-        branch=branch,
-        crisis_level_max=crisis_level,
+        crisis_level_max="normal",
         message_count=0,
     )
     db.add(new_session)
-    # Flush чтобы можно было ссылаться на session.id ниже до commit
     await db.flush()
     return new_session
 
@@ -221,69 +252,3 @@ async def _get_or_create_session(
 def _crisis_priority(level: str) -> int:
     """Числовой приоритет уровня кризиса (для сравнения)."""
     return {"normal": 0, "elevated": 1, "high": 2, "immediate": 3}.get(level, 0)
-
-
-async def _call_llm_with_fallback(
-    llm_messages: list[Message],
-    crisis_level: str,
-) -> tuple[str, dict]:
-    """Вызвать LLM с обработкой ошибок.
-
-    При ошибке LLM:
-    - Если crisis = immediate → жёстко-зашитый кризисный ответ с контактами
-    - Иначе → общий ответ-заглушка
-
-    Returns:
-        (текст_ответа, метрики_dict)
-    """
-    import httpx
-
-    metrics: dict = {}
-    start = time.perf_counter()
-
-    try:
-        provider = get_provider()
-        response = await provider.generate(llm_messages)
-        elapsed_ms = int((time.perf_counter() - start) * 1000)
-        metrics["response_time_ms"] = elapsed_ms
-        metrics["prompt_tokens"] = response.usage.prompt_tokens
-        metrics["completion_tokens"] = response.usage.completion_tokens
-        return response.text, metrics
-
-    except httpx.HTTPStatusError as e:
-        # HTTP-ошибка от LLM API: логируем и тело ответа (для отладки)
-        body_preview = ""
-        try:
-            body_preview = e.response.text[:500]
-        except Exception:
-            pass
-        logger.error(
-            "LLM HTTP error: status=%d url=%s body=%s",
-            e.response.status_code,
-            e.request.url,
-            body_preview,
-        )
-        elapsed_ms = int((time.perf_counter() - start) * 1000)
-        metrics["response_time_ms"] = elapsed_ms
-        metrics["llm_error"] = (
-            f"HTTP {e.response.status_code}: {body_preview[:200]}"
-        )
-
-    except httpx.HTTPError as e:
-        # Сетевая ошибка / таймаут / неверный URL
-        logger.exception("LLM network error: %s", e)
-        elapsed_ms = int((time.perf_counter() - start) * 1000)
-        metrics["response_time_ms"] = elapsed_ms
-        metrics["llm_error"] = f"Network: {type(e).__name__}: {e}"
-
-    except Exception as e:
-        # Любая другая неожиданная ошибка
-        logger.exception("LLM unexpected error: %s", e)
-        elapsed_ms = int((time.perf_counter() - start) * 1000)
-        metrics["response_time_ms"] = elapsed_ms
-        metrics["llm_error"] = f"Unexpected: {type(e).__name__}: {e}"
-
-    # Fallback: при immediate — жёстко-зашитый кризисный ответ
-    if crisis_level == "immediate":
-        return _FALLBACK_IMMEDIATE, metrics
-    return _FALLBACK_GENERIC, metrics

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import CrisisInlineCard from "@/components/Crisis/CrisisInlineCard";
@@ -67,6 +68,14 @@ export default function ChatContainer() {
             <p className="text-xs text-warm-600">Первая психологическая помощь</p>
           </div>
           <div className="flex items-center gap-2">
+            {/* Ссылка на досье (Сессия 18+) */}
+            <Link
+              href="/profile"
+              className="text-xs text-warm-600 hover:text-warm-900 transition-colors px-2 py-1 rounded hover:bg-warm-100"
+              aria-label="Что Кайрос помнит обо мне"
+            >
+              Профиль
+            </Link>
             {/* Кнопка «Завершить сессию» — открывает финальную карточку feedback.
                 Показывается только если есть хотя бы один ответ бота, и пока
                 ещё не открыта карточка feedback. */}

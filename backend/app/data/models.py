@@ -147,7 +147,8 @@ class ChatSession(Base):
     )
 
     # Метрики сессии (для data flywheel)
-    branch: Mapped[str | None] = mapped_column(String(1), nullable=True)  # "A" или "B"
+    # Поле branch (rule-based селектор A/B) удалено в Сессии 18 —
+    # теперь crisis_level определяется через PerceptionReport.
     crisis_level_max: Mapped[str] = mapped_column(
         String(20), default="normal", nullable=False
     )
@@ -229,6 +230,11 @@ class Message(Base):
     response_time_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     prompt_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
     completion_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # JSON-сериализация PerceptionReport (логирование для data flywheel + LoRA).
+    # Заполняется только когда use_perception_layer=True (Сессия 18+).
+    # Для role=user — содержит отчёт анализатора об этом сообщении.
+    perception_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Связи
     session: Mapped[ChatSession] = relationship(

@@ -19,6 +19,11 @@ dependencies = [
 
     # === Агенты (Блоки 47-55) ===
     "pyyaml>=6.0",                    # Сериализация эталонных статей в YAML
+
+    # === Слой восприятия (Сессия 18+) ===
+    "redis[hiredis]>=5.2.0",          # Async Redis-клиент для Mood и rate limit
+    "celery>=5.4.0",                  # Фоновый брокер для ReflectionAgent
+    "celery[redis]>=5.4.0",           # Поддержка Redis как broker/backend
 ]
 
 [project.optional-dependencies]
@@ -26,6 +31,7 @@ dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.24",
     "httpx>=0.28.0",
+    "fakeredis>=2.26.0",
 ]
 
 [build-system]
