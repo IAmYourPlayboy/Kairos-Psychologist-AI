@@ -14,19 +14,20 @@
 
 html,
 body {
-  /* Тёплый светлый фон по умолчанию */
-  @apply bg-warm-50 text-warm-900;
-  /* Сглаженный шрифт на macOS / Windows */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  /* Чтобы фон растягивался на весь экран */
+  @apply bg-warm-50 text-warm-900;
   min-height: 100vh;
 }
 
-/* Скроллбар выглядит ненавязчиво */
+.dark body {
+  @apply bg-neutral-950 text-white;
+}
+
+/* Скроллбар — ненавязчивый, темовый */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -42,4 +43,51 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-warm-400;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  @apply bg-white/20;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  @apply bg-white/30;
+}
+
+/* Custom scrollbar для отдельных скролл-областей в сайдбаре */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-warm-300/50 rounded-full;
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full;
+}
+
+/* prefers-reduced-motion: вырубаем все анимации длиннее 200ms */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Fallback для старых браузеров без backdrop-filter */
+@supports not (backdrop-filter: blur(16px)) {
+  .backdrop-blur-md,
+  .backdrop-blur-xl,
+  .backdrop-blur-2xl,
+  .backdrop-blur-\[16px\] {
+    background-color: rgba(255, 255, 255, 0.85);
+  }
+  .dark .backdrop-blur-md,
+  .dark .backdrop-blur-xl,
+  .dark .backdrop-blur-2xl,
+  .dark .backdrop-blur-\[16px\] {
+    background-color: rgba(0, 0, 0, 0.7);
+  }
 }
