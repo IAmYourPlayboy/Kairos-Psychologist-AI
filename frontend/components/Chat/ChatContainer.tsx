@@ -97,12 +97,17 @@ export default function ChatContainer() {
             <div className="w-full flex flex-col mt-auto pt-10">
               {chat.messages.map((msg, idx) => {
                 const isLast = idx === chat.messages.length - 1;
+                // Анимация печати ТОЛЬКО для свежих ответов бота (созданных
+                // в этом mount'е). Иначе при возврате с /settings или /profile
+                // бот будет «печатать» заново уже отправленные сообщения.
+                const animateTyping =
+                  msg.role === "assistant" && isLast && chat.isFreshMessage(msg.id);
                 return (
                   <div key={msg.id}>
                     <MessageBubble
                       role={msg.role}
                       content={msg.content}
-                      animateTyping={msg.role === "assistant" && isLast}
+                      animateTyping={animateTyping}
                     />
                     {msg.role === "assistant" &&
                       msg.crisisLevel &&

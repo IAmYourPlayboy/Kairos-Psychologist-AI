@@ -58,6 +58,13 @@ export function useChat(options: UseChatOptions = {}) {
   // AbortController для отмены текущего запроса
   const abortRef = useRef<AbortController | null>(null);
 
+  // Set ID-шников сообщений созданных в ТЕКУЩЕМ маунте.
+  // Сообщения загруженные из Dexie сюда НЕ попадают.
+  // Используется в UI чтобы анимировать печать (HumanTypingEffect)
+  // только для свежих ответов бота — а не повторно при ре-маунте
+  // ChatContainer (например, после возврата с /settings).
+  const freshMessageIdsRef = useRef<Set<string>>(new Set());
+
   /**
    * При смене sessionId — полностью пересинхронизируем UI-state с новой сессией.
    *
@@ -84,6 +91,10 @@ export function useChat(options: UseChatOptions = {}) {
     setCrisisLevel("normal");
     setError(null);
     setIsTyping(false);
+
+    // 2.5. Очищаем "свежие" id'шники — при смене сессии или ре-маунте
+    // ничего ещё не было «только что отправлено» в этой инстанции.
+    freshMessageIdsRef.current = new Set();
 
     // 3. Если sessionId ещё не подгружен (первый рендер до Context init) —
     // просто остаёмся в reset-состоянии. Когда sessionId появится, эффект
@@ -134,6 +145,8 @@ export function useChat(options: UseChatOptions = {}) {
         status: "pending",
       };
       setMessages((prev) => [...prev, userMessage]);
+      freshMessageIdsRef.current.add(userMessage.id);
+      freshMessageIdsRef.current.add(userMessage.id);
 
       // 1.5. Сразу сохраняем в локальную БД (Dexie) — на случай потери сети.
       if (sessionId) {
@@ -190,6 +203,7 @@ export function useChat(options: UseChatOptions = {}) {
           status: "synced",
         };
         setMessages((prev) => [...prev, botMessage]);
+        freshMessageIdsRef.current.add(botMessage.id);
         setCrisisLevel(response.crisis_level);
 
         // 5.5. Сохраняем ответ бота в локальную БД (Dexie).
@@ -274,6 +288,16 @@ export function useChat(options: UseChatOptions = {}) {
     [sessionId],
   );
 
+  /**
+   * Свежее ли сообщение (созданное в текущем mount'е) или загружено из истории.
+   * Используется UI для решения анимировать ли HumanTypingEffect — мы не
+   * хотим, чтобы при возврате на /chat бот «печатал» свои старые ответы.
+   */
+  const isFreshMessage = useCallback(
+    (id: string): boolean => freshMessageIdsRef.current.has(id),
+    [],
+  );
+
   return {
     // Состояние
     messages,
@@ -287,5 +311,7 @@ export function useChat(options: UseChatOptions = {}) {
     cancelTyping,
     resetChat,
     sendFeedback,
+    // Утилиты
+    isFreshMessage,
   };
 }
