@@ -1,6 +1,6 @@
 # AI-ПСИХОЛОГ (KAIROS): ПЛАН РЕАЛИЗАЦИИ
 
-> **Версия**: 3.2 | **Дата**: Апрель 2026 (Сессия 16)
+> **Версия**: 3.4 | **Дата**: Май 2026 (Сессия 18)
 > **Назначение**: Единственный источник правды о проекте для AI-ассистента и разработчика.
 > **Как пользоваться**: открой Claude Code, прикрепи этот файл и говори «делай блок X из PROGRESS.md».
 
@@ -205,8 +205,10 @@ ASQ → [положительный → экстренные контакты Н
 | RAG | Qdrant + PubMed/Cochrane | Доказательная база терапии, после MVP |
 | Фронтенд | Next.js 14 (App Router, TypeScript, Tailwind) | Веб-first, мобильный дизайн |
 | Бекенд | FastAPI (Python 3.11+, async) | API для всех клиентов |
-| БД серверная | PostgreSQL 16 + Redis 7 | Сессии, data flywheel, кеш, аутентификация |
+| БД серверная | PostgreSQL 16 + Redis 7 | Сессии, data flywheel, кеш, аутентификация, Mood (слой восприятия) |
 | БД клиентская | Dexie.js (IndexedDB) | Offline-кэш чатов, sync с сервером |
+| Фоновые задачи | Celery 5.6 + Redis (broker) | ReflectionAgent через 15 мин после последнего сообщения |
+| Слой восприятия | LLM анализатор + 6-осевой Mood + Dossier по папкам + ReflectionAgent | Заменил rule-based детектор кризиса (Сессия 18) |
 | Аутентификация | PyJWT + pwdlib (Argon2) + httpOnly cookies | 4 метода: email, Telegram, VK ID, SMS |
 | Платежи | ЮKassa (`yookassa` SDK) | Подписки, рекуррентные платежи, чеки |
 | Инфраструктура | Docker Compose на VPS (Timeweb Cloud, Москва) | ФЗ-152, 1 000₽/мес |
@@ -273,10 +275,25 @@ Kairos/
 │   │   │   │   ├── builder.py ✓     # build_system_prompt()
 │   │   │   │   ├── forbidden_phrases.py ✓ # Запрещённые фразы
 │   │   │   │   └── human_style.py ✓ # «Живой» стиль речи
-│   │   │   ├── crisis/ ✓            # Кризисная детекция
-│   │   │   │   ├── detector.py ✓    # assess_crisis_level() — 3 уровня
-│   │   │   │   ├── keywords.py ✓    # Словари (immediate/high/elevated)
+│   │   │   ├── crisis/ ✓            # Кризисные контакты (статика)
 │   │   │   │   └── contacts.py ✓    # Контакты по возрастным группам
+│   │   │   │   # detector.py / keywords.py — УДАЛЕНЫ в Сессии 18.
+│   │   │   │   # Кризисную детекцию делает MessageAnalyzer (см. perception/).
+│   │   │   ├── perception/ ✓        # ⭐ СЛОЙ ВОСПРИЯТИЯ (Сессия 18+)
+│   │   │   │   ├── README.md ✓
+│   │   │   │   ├── analyzer.py ✓    # MessageAnalyzer (LLM, PerceptionReport)
+│   │   │   │   ├── analyzer_prompt.py ✓ # Системный промпт анализатора
+│   │   │   │   ├── mood.py ✓        # MoodService (6 осей в Redis)
+│   │   │   │   ├── dossier.py ✓     # DossierService (CRUD над фактами/цитатами)
+│   │   │   │   ├── dossier_summary.py ✓ # Сериализация фактов в текст
+│   │   │   │   ├── folders.py ✓     # 13 фиксированных папок + custom
+│   │   │   │   ├── pipeline.py ✓    # PerceptionPipeline (оркестратор)
+│   │   │   │   ├── prompt_builder.py ✓  # Сборка промпта основной LLM
+│   │   │   │   ├── reflection_agent.py ✓ # Фоновый агент извлечения фактов
+│   │   │   │   ├── reflection_prompt.py ✓ # Промпты extract / dedupe
+│   │   │   │   ├── reflection_tasks.py ✓ # Celery-таски + scheduling
+│   │   │   │   ├── redis_client.py ✓ # Singleton Redis-клиент
+│   │   │   │   └── types.py ✓       # PerceptionReport + MoodState (Pydantic)
 │   │   │   ├── knowledge/ ✓         # ⭐ МОЗГ КАЙРОСА — статичные знания
 │   │   │   │   ├── README.md ✓
 │   │   │   │   ├── six_cs.py ✓      # Протокол SIX C's Фарчи
@@ -944,6 +961,15 @@ python agents/runner.py --review
 - Вычеркнуты из маршрута: Премия Новатор Москвы (категории не подходят), Росмолодёжь.Гранты (реальная доступность ≈ 0), ФРИИ (это венчурные инвестиции с долей, не грант), РФРИТ (для крупных корпораций от 100М₽), Госпремия РФ (для академиков)
 - Подтверждены детали i.moscow Pilot: до 4М₽ (не 2М как в старой версии), требуется свидетельство о регистрации ПО + ЭЦП + TRL ≥ 6
 - Сырые данные с официальных страниц сохранены в `docs/research/grants_raw/` (7 файлов: Yandex Cloud Boost, AI Studio, Mayor Moscow, RFRIT, Skolkovo, iMoscowPilot, RSCF)
+
+**Сессия 18** (Май 2026): ⭐ **Слой восприятия заменил rule-based детектор кризиса.** Ключевые решения:
+- Rule-based grep (`crisis/detector.py`, `branch_selector.py`) удалён полностью — он не понимал намёков и контекста.
+- Построен `core/perception/`: 4 связанных компонента — Brain (статичные знания, уже было), Dossier (на user_id, папки→подпапки→факты с цитатами), Mood (6 осей в Redis на session_id), MessageAnalyzer (отдельный LLM-вызов на каждое сообщение, возвращает PerceptionReport с risk_level + emotion + theme + folder_hints + inner_monologue).
+- ReflectionAgent через **Celery + Redis** — фоновый агент извлечения фактов, запускается через 15 минут после последнего сообщения. Полный цикл: extract (LLM) → classify+dedupe (LLM) → update Dossier. Дедупликация запусков через Redis-ключ.
+- Каждое сообщение пользователя теперь = 2 LLM-вызова (analyzer + main reply). Стоимость ≈ 2₽ за сообщение на YandexGPT Lite, при 100 подписчиках «Поддержка» (49 900₽/мес) затраты ≈ 33% выручки — профитно.
+- **Решение по fallback**: rule-based страховки больше нет. Если LLM упал — честное «извини, не могу» + SOS-кнопка остаётся доступна (статичные контакты в `crisis/contacts.py`).
+- UI досье на `/profile` (просмотр + удаление, ФЗ-152 «право на удаление»). MVP-авторизация через `guest_id` query (после Блока 13 — JWT).
+- Дизайн: `docs/superpowers/specs/2026-05-02-perception-layer-design.md`. План: `docs/superpowers/plans/2026-05-02-perception-layer-plan.md`.
 
 ---
 

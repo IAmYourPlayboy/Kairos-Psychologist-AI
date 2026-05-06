@@ -1287,6 +1287,67 @@
 
 ---
 
+## ⭐ СЛОЙ ВОСПРИЯТИЯ (Сессия 18, Май 2026) — заменил rule-based детектор
+
+> **Дизайн**: [`docs/superpowers/specs/2026-05-02-perception-layer-design.md`](docs/superpowers/specs/2026-05-02-perception-layer-design.md)
+> **План имплементации**: [`docs/superpowers/plans/2026-05-02-perception-layer-plan.md`](docs/superpowers/plans/2026-05-02-perception-layer-plan.md)
+> **Реализация**: ветка `feature/perception-layer` (~25 коммитов).
+
+**Зачем**: rule-based grep (`crisis/detector.py`, `branch_selector.py`) не понимает намёков и контекста. *«Они мне сказали кое-что...»* возвращало `normal`, при том что это намёк на серьёзную тему. Архитектурный потолок словарей не закрыть расширением словарей.
+
+**Что построено**: 4 связанных компонента в `core/perception/`:
+
+### ✅ Блок P1 — Brain (статичные знания, уже было)
+- `core/knowledge/*.py` — терапевтические протоколы, эталонные статьи
+- Меняется редко, через цепочку агентов (Researcher → Validator → ...)
+
+### ✅ Блок P2 — Dossier (на user_id, папки → подпапки → факты)
+- `data/dossier_models.py` — 3 таблицы: `dossier_facts`, `dossier_quotes`, `dossier_checkpoints`
+- `core/perception/folders.py` — 13 фиксированных папок + custom + валидация
+- `core/perception/dossier.py` — `DossierService` с CRUD над фактами/цитатами
+- Каждый факт хранит **буквальные цитаты** пользователя → Кайрос возвращается к точному тексту
+
+### ✅ Блок P3 — Mood (6 осей в Redis, на session_id)
+- `core/perception/mood.py` — `MoodService` с правилами обновления
+- 6 осей: alertness, warmth, pace, assertiveness, trust_in_user, depth
+- Обновляется правилами после каждого сообщения (без LLM)
+- Сериализуется в текстовый блок для основного промпта
+
+### ✅ Блок P4 — MessageAnalyzer + Pipeline + интеграция в /api/chat
+- `core/perception/analyzer.py` — отдельный LLM-вызов на каждое сообщение
+- Возвращает `PerceptionReport`: risk_level, эмоции, тема, hidden_signals, folder_hints, **inner_monologue** (мысли Кайроса от первого лица)
+- `core/perception/pipeline.py` — `PerceptionPipeline` оркестратор: analyzer → mood update → подтяжка фактов → промпт → основная LLM
+- `api/chat.py` упрощён: больше нет ветвления и rule-based fallback
+
+### ✅ Блок P5 — ReflectionAgent через Celery
+- `core/perception/reflection_agent.py` — фоновый агент, запускается через 15 минут после последнего сообщения
+- Полный цикл: extract (LLM) → classify+dedupe (LLM) → update Dossier
+- `celery_app.py` + `celery_worker.py` + `reflection_tasks.py` — Celery с Redis-broker
+- **Дедупликация запусков** через Redis-ключ `reflection:scheduled:{user_id}`: если пользователь продолжает писать, новый scheduled_at перебьёт старый и устаревший таск-старичок выходит без работы
+
+### ✅ Блок P6 — UI досье + удаление старого rule-based
+- `api/dossier.py` — GET / DELETE /api/dossier (по user_id или guest_id для MVP)
+- `frontend/app/profile/page.tsx` + `frontend/components/Dossier/DossierView.tsx` — просмотр и удаление досье (ФЗ-152 «право на удаление»)
+- **Удалены**: `crisis/detector.py`, `crisis/keywords.py`, `branch_selector.py`, `tests/test_crisis.py`, `tests/test_chat.py` (старая ветка). Сохранены: `crisis/contacts.py`, `prompts/*` (используются PromptBuilder'ом)
+- Колонка `chat_sessions.branch` удалена через alembic-миграцию
+
+### Метрики Сессии 18
+
+- **114 тестов** перцепции и API досье — все зелёные
+- **~25 коммитов** на ветке `feature/perception-layer`
+- Удалено **948 строк** старого rule-based кода
+- Каждое сообщение пользователя теперь = **2 LLM-вызова** (analyzer + main reply) ≈ 0.45-2₽ при разных моделях
+- Каждая сессия (раз в 15 мин) = +1 LLM-вызов рефлексии ≈ 0.5-1₽
+
+### Что НЕ входит в эту итерацию
+
+- Аудио-восприятие (STT, Aniemore WavLM) — после MVP
+- Голос двойника (ElevenLabs PVC) — Фаза 7
+- Тренировка Mood и Analyzer на data flywheel — Фаза 5+ (после 500+ диалогов)
+- Evolutional Dossier-агент (ревизор фактов) — Фаза 7+
+
+---
+
 ## СКРИНИНГ И ОЦЕНКА (валидированные опросники)
 
 ### ⬜ Блок 69 — Скрининг ASQ + PSS-4 + ОСР
