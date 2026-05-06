@@ -1,6 +1,10 @@
 "use client";
 
+import { motion } from "motion/react";
+
 import HumanTypingEffect from "./HumanTypingEffect";
+import { cn } from "@/lib/cn";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
 
 interface MessageBubbleProps {
   role: "user" | "assistant";
@@ -12,34 +16,54 @@ interface MessageBubbleProps {
    */
   animateTyping?: boolean;
   onTypingComplete?: () => void;
+  timestamp?: string;
 }
 
 /**
  * Пузырь сообщения в чате.
  *
- * Цвета подобраны под палитру Кайроса (warm + accent):
- * - Бот: тёплый бежевый фон (как лист бумаги)
- * - Пользователь: акцентный синий (доверие, безопасность)
+ * Стиль: асимметричные радиусы (как в мессенджерах), glassmorphism для бота,
+ * сплошной accent-цвет для пользователя.
  *
- * Для бота используется HumanTypingEffect — анимация «живой» печати
- * с паузами после знаков препинания.
+ * Анимация появления: spring с разных сторон (юзер — справа, бот — слева).
  */
 export default function MessageBubble({
   role,
   content,
   animateTyping = true,
   onTypingComplete,
+  timestamp,
 }: MessageBubbleProps) {
+  const t = useThemeTokens();
   const isBot = role === "assistant";
 
   return (
-    <div className={`flex ${isBot ? "justify-start" : "justify-end"} mb-3`}>
+    <motion.div
+      layout
+      initial={{
+        opacity: 0,
+        scale: 0.7,
+        y: 30,
+        x: isBot ? -20 : 20,
+      }}
+      animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
+      transition={{
+        type: "spring",
+        stiffness: 380,
+        damping: 26,
+      }}
+      className={cn(
+        "flex items-end gap-2 mb-3",
+        isBot ? "justify-start" : "justify-end",
+      )}
+      style={{ transformOrigin: isBot ? "bottom left" : "bottom right" }}
+    >
       <div
-        className={`max-w-[80%] rounded-2xl px-4 py-2.5 leading-relaxed ${
-          isBot
-            ? "bg-warm-100 text-warm-900 rounded-bl-sm"
-            : "bg-accent-500 text-white rounded-br-sm"
-        }`}
+        className={cn(
+          "relative max-w-[85%] sm:max-w-[75%] px-4 py-2.5 text-[15px] leading-[1.45] break-words shadow-sm",
+          isBot ? "rounded-[20px] rounded-bl-[4px]" : "rounded-[20px] rounded-br-[4px] font-medium",
+          isBot ? t.msgAi : t.msgUser,
+        )}
       >
         {isBot && animateTyping ? (
           <HumanTypingEffect
@@ -48,9 +72,14 @@ export default function MessageBubble({
             speed="normal"
           />
         ) : (
-          <span className="whitespace-pre-wrap break-words">{content}</span>
+          <span className="whitespace-pre-wrap">{content}</span>
+        )}
+        {timestamp && (
+          <span className="block text-[10px] font-medium opacity-60 mt-1 text-right">
+            {timestamp}
+          </span>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
