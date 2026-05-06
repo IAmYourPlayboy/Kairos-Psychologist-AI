@@ -61,10 +61,19 @@ export default function ChatContainer() {
     .find((m) => m.role === "assistant");
   const contactsForPanel = lastBotMessage?.crisisContacts ?? [];
 
+  // Padding нужен в трёх местах (messages, error, input).
+  // pr учитывает ширину RightDock (260/280px), pl расширяется когда сайдбар свёрнут.
+  const sidebarPadding = cn(
+    "md:pr-[260px] lg:pr-[280px]",
+    !isSidebarOpen && "md:pl-16 lg:pl-24",
+  );
+
   return (
     <div className="flex flex-col h-full w-full relative overflow-hidden">
       {/* SOS — абсолютно в правом верхнем углу контентной области.
-          На md+ — слева от RightDock-аватара. На мобиле — справа сверху. */}
+          ⚠ Магические числа right-[120px]/[130px] подобраны под ширину
+          RightDock (260px / 280px) минус собственный размер кнопки и зазор.
+          Если RightDock-ширина изменится — синхронизируй здесь. */}
       <div className="absolute top-3 right-3 md:top-6 md:right-[120px] lg:right-[130px] z-30">
         <SOSButton
           crisisLevel={chat.crisisLevel}
@@ -75,8 +84,8 @@ export default function ChatContainer() {
       {/* Scrollable messages area */}
       <div
         className={cn(
-          "flex-1 overflow-y-auto overflow-x-hidden w-full p-4 sm:p-6 lg:p-8 md:pr-[260px] lg:pr-[280px] flex flex-col custom-scrollbar transition-all duration-500",
-          !isSidebarOpen && "md:pl-16 lg:pl-24",
+          "flex-1 overflow-y-auto overflow-x-hidden w-full p-4 sm:p-6 lg:p-8 flex flex-col custom-scrollbar transition-all duration-500",
+          sidebarPadding,
         )}
       >
         <div className="w-full max-w-3xl mx-auto flex-1 flex flex-col">
@@ -152,8 +161,7 @@ export default function ChatContainer() {
           className={cn(
             "border-t px-4 py-2 text-sm transition-all duration-500",
             "bg-crisis-100/80 border-crisis-300 text-crisis-800",
-            !isSidebarOpen && "md:pl-16 lg:pl-24",
-            "md:pr-[260px] lg:pr-[280px]",
+            sidebarPadding,
           )}
         >
           <div className="max-w-3xl mx-auto">⚠️ {chat.error}</div>
@@ -161,13 +169,7 @@ export default function ChatContainer() {
       )}
 
       {/* Поле ввода */}
-      <div
-        className={cn(
-          "transition-all duration-500",
-          !isSidebarOpen && "md:pl-16 lg:pl-24",
-          "md:pr-[260px] lg:pr-[280px]",
-        )}
-      >
+      <div className={cn("transition-all duration-500", sidebarPadding)}>
         <InputArea
           onSend={chat.sendMessage}
           disabled={chat.isTyping}
