@@ -4,7 +4,8 @@
 иметь возможность увидеть всё, что сервис о нём знает, и удалить
 любую часть или всё целиком.
 
-MVP-авторизация: user_id передаётся через query параметр (заглушка).
+MVP-авторизация: user_id или guest_id передаётся через query параметр.
+Если задан guest_id — резолвим в user_id через привязанные chat_sessions.
 После Блока 13 (auth) переключим на JWT через Depends(get_current_user).
 """
 
@@ -14,10 +15,12 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.perception.dossier import DossierService
 from app.data.database import get_db
+from app.data.models import ChatSession
 
 logger = logging.getLogger(__name__)
 
@@ -59,26 +62,72 @@ class DeleteResponse(BaseModel):
 
 
 # ============================================================================
+# Резолвинг user_id из guest_id (MVP-хелпер)
+# ============================================================================
+
+
+async def _resolve_user_id(
+    *,
+    db: AsyncSession,
+    user_id: str | None,
+    guest_id: str | None,
+) -> str | None:
+    """Получить реальный user_id.
+
+    - Если передан user_id — возвращаем как есть.
+    - Если передан только guest_id — ищем chat_sessions с этим guest_id
+      и возвращаем привязанный user_id (если он есть).
+    - Иначе — None (UI должен показать «досье недоступно»).
+    """
+    if user_id:
+        return user_id
+    if not guest_id:
+        return None
+
+    # Ищем сессию с этим guest_id, у которой уже привязан user_id
+    stmt = (
+        select(ChatSession.user_id)
+        .where(ChatSession.guest_id == guest_id)
+        .where(ChatSession.user_id.is_not(None))
+        .limit(1)
+    )
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+# ============================================================================
 # Endpoints
 # ============================================================================
 
 
 @router.get("", response_model=DossierResponse)
 async def get_dossier(
-    user_id: str = Query(
-        ...,
+    user_id: str | None = Query(
+        None,
         description="ID пользователя (после Блока 13 — из JWT)",
+    ),
+    guest_id: str | None = Query(
+        None,
+        description=(
+            "Гостевой ID. Используется на MVP до регистрации — "
+            "резолвится в user_id через chat_sessions."
+        ),
     ),
     db: AsyncSession = Depends(get_db),
 ) -> DossierResponse:
     """Вернуть все факты пользователя (включая superseded для прозрачности).
 
-    Если user_id неизвестный — возвращаем пустой список, не 404.
-    Это упрощает UI: первый заход показывает «Кайрос ещё ничего не знает»,
-    а не страницу с ошибкой.
+    Если user_id неизвестный или guest_id не привязан — возвращаем
+    пустой список, не 404. UI отрисует «Кайрос ещё ничего не знает».
     """
+    resolved_user_id = await _resolve_user_id(
+        db=db, user_id=user_id, guest_id=guest_id,
+    )
+    if not resolved_user_id:
+        return DossierResponse(facts=[])
+
     service = DossierService(db)
-    facts = await service.all_user_facts(user_id)
+    facts = await service.all_user_facts(resolved_user_id)
 
     return DossierResponse(
         facts=[
@@ -107,7 +156,8 @@ async def get_dossier(
 @router.delete("/{fact_id}", response_model=DeleteResponse)
 async def delete_fact(
     fact_id: str,
-    user_id: str = Query(...),
+    user_id: str | None = Query(None),
+    guest_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ) -> DeleteResponse:
     """Удалить один факт пользователя.
@@ -115,9 +165,20 @@ async def delete_fact(
     Returns:
         404 если факт не найден или принадлежит другому пользователю.
     """
+    resolved_user_id = await _resolve_user_id(
+        db=db, user_id=user_id, guest_id=guest_id,
+    )
+    if not resolved_user_id:
+        raise HTTPException(
+            status_code=404,
+            detail="user_id или guest_id не определены",
+        )
+
     service = DossierService(db)
     try:
-        await service.delete_fact(user_id=user_id, fact_id=fact_id)
+        await service.delete_fact(
+            user_id=resolved_user_id, fact_id=fact_id,
+        )
         return DeleteResponse(ok=True, deleted_count=1)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -125,7 +186,8 @@ async def delete_fact(
 
 @router.delete("", response_model=DeleteResponse)
 async def delete_all_dossier(
-    user_id: str = Query(...),
+    user_id: str | None = Query(None),
+    guest_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ) -> DeleteResponse:
     """Удалить ВСЁ досье пользователя.
@@ -134,9 +196,15 @@ async def delete_all_dossier(
     агент бы решил «уже всё обработано» и не воссоздал факты заново
     из тех же сообщений.
     """
+    resolved_user_id = await _resolve_user_id(
+        db=db, user_id=user_id, guest_id=guest_id,
+    )
+    if not resolved_user_id:
+        return DeleteResponse(ok=True, deleted_count=0)
+
     service = DossierService(db)
-    count = await service.delete_all_for_user(user_id)
+    count = await service.delete_all_for_user(resolved_user_id)
     logger.info(
-        "Dossier wiped: user=%s count=%d", user_id[:8], count,
+        "Dossier wiped: user=%s count=%d", resolved_user_id[:8], count,
     )
     return DeleteResponse(ok=True, deleted_count=count)

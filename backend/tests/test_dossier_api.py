@@ -136,3 +136,36 @@ async def test_delete_all_dossier(client_with_user):
 
     list_resp = await client.get(f"/api/dossier?user_id={user_id}")
     assert list_resp.json()["facts"] == []
+
+
+# ============================================================================
+# Резолвинг через guest_id (MVP, до Блока 13 auth)
+# ============================================================================
+
+
+async def test_get_dossier_by_guest_id(client_with_user):
+    """Если у пользователя есть привязанная сессия с guest_id — досье находится."""
+    from app.data.models import ChatSession
+    client, user_id = client_with_user
+
+    # Создаём ChatSession с guest_id, привязанную к user_id
+    guest_id = str(uuid4())
+    async with async_session_factory() as db:
+        db.add(ChatSession(
+            id=str(uuid4()),
+            user_id=user_id,
+            guest_id=guest_id,
+        ))
+        await db.commit()
+
+    resp = await client.get(f"/api/dossier?guest_id={guest_id}")
+    assert resp.status_code == 200
+    assert len(resp.json()["facts"]) == 1
+
+
+async def test_get_dossier_no_id_returns_empty(client_with_user):
+    """Если ни user_id, ни guest_id не переданы — пустой список."""
+    client, _ = client_with_user
+    resp = await client.get("/api/dossier")
+    assert resp.status_code == 200
+    assert resp.json()["facts"] == []
