@@ -88,21 +88,26 @@ def test_none_inner_monologue_normalizes():
 # ============================================================================
 
 
-def test_long_inner_monologue_truncates():
-    long = "Пользователь чувствует тревогу. " * 100  # ~3300 chars
+def test_long_inner_monologue_truncates_to_exact_limit():
+    # Input is guaranteed > 2000 chars (3200 chars from "Пользователь..."*100)
+    long = "Пользователь чувствует тревогу. " * 100
+    assert len(long) > 2000  # sanity: input is actually longer
     report = PerceptionReport(**_full_report(inner_monologue=long))
-    assert len(report.inner_monologue) <= 2000
+    assert len(report.inner_monologue) == 2000
 
 
-def test_long_what_user_needs_truncates():
-    long = "Нужно выслушать и поддержать. " * 50  # ~1500 chars
+def test_long_what_user_needs_truncates_to_exact_limit():
+    long = "Нужно выслушать и поддержать. " * 50
+    assert len(long) > 500
     report = PerceptionReport(**_full_report(what_user_needs=long))
-    assert len(report.what_user_needs) <= 500
+    assert len(report.what_user_needs) == 500
 
 
-def test_long_dominant_emotion_truncates():
-    report = PerceptionReport(**_full_report(dominant_emotion="а" * 100))
-    assert len(report.dominant_emotion) <= 50
+def test_long_dominant_emotion_truncates_to_exact_limit():
+    long = "а" * 100
+    assert len(long) > 50
+    report = PerceptionReport(**_full_report(dominant_emotion=long))
+    assert len(report.dominant_emotion) == 50
 
 
 # ============================================================================
