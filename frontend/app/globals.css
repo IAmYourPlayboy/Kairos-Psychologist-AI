@@ -3,14 +3,156 @@
 @tailwind utilities;
 
 /* ===========================================================================
- * Глобальные стили Кайроса
+ * Дизайн-токены Кайроса (Сессия 21+).
+ *
+ * ЭТО ИСТОЧНИК ПРАВДЫ для палитры, glass-эффектов, z-layers и типографики.
+ * Все остальные слои (tailwind.config.ts, useThemeTokens.ts) ссылаются СЮДА.
+ *
+ * Спека: docs/superpowers/specs/2026-05-06-css-variables-foundation-design.md
  * =========================================================================== */
 
 :root {
-  /* Высота шапки/футера для отступов */
+  /* ===== Z-LAYERS (тема-независимые) =====
+   * Семантические уровни наложения. 9 уровней в 3 концептуальных группах:
+   *   Decorative   — фон, декорации (pointer-events: none)
+   *   Structural   — контент и навигационные панели
+   *   Interactive  — плавающие controls, overlays, modals, toasts
+   * Между группами щель в 10 единиц для будущих вставок без сдвига номеров.
+   */
+  --z-decorative:     0;
+  --z-content:       10;
+  --z-structure:     20;
+  --z-floating-low:  30;
+  --z-floating-high: 40;
+  --z-overlay:       50;
+  --z-modal-backdrop: 60;
+  --z-modal:         70;
+  --z-toast:         80;
+
+  /* ===== PALETTE (тема-независимая) =====
+   * RGB-тройки (без rgb()/без запятых) для Tailwind alpha-channel синтаксиса.
+   * Использование: rgb(var(--color-warm-50) / 0.8) — warm-50 с alpha 0.8.
+   */
+
+  /* warm — тёплая нейтральная база */
+  --color-warm-50:  250 247 242;
+  --color-warm-100: 244 239 231;
+  --color-warm-200: 232 223 208;
+  --color-warm-300: 212 197 174;
+  --color-warm-400: 184 164 136;
+  --color-warm-500: 157 136 107;
+  --color-warm-600: 126 109  84;
+  --color-warm-700:  95  82  64;
+  --color-warm-800:  63  54  43;
+  --color-warm-900:  31  27  22;
+
+  /* accent — спокойный синий */
+  --color-accent-50:  238 244 248;
+  --color-accent-100: 214 227 237;
+  --color-accent-200: 174 206 219;
+  --color-accent-300: 122 177 194;
+  --color-accent-400:  77 147 168;
+  --color-accent-500:  53 117 136;
+  --color-accent-600:  40  89 106;
+  --color-accent-700:  29  65  76;
+  --color-accent-800:  20  43  51;
+  --color-accent-900:  11  23  25;
+
+  /* crisis — приглушённый красный */
+  --color-crisis-50:  250 240 238;
+  --color-crisis-100: 244 217 212;
+  --color-crisis-200: 232 176 166;
+  --color-crisis-300: 217 132 122;
+  --color-crisis-400: 199  87  79;
+  --color-crisis-500: 165  58  54;
+  --color-crisis-600: 127  42  41;
+  --color-crisis-700:  92  30  29;
+  --color-crisis-800:  62  20  20;
+  --color-crisis-900:  31  10  10;
+
+  /* neutral — нейтральная шкала (для тёмной темы) */
+  --color-neutral-50:  250 250 250;
+  --color-neutral-100: 245 245 245;
+  --color-neutral-200: 229 229 229;
+  --color-neutral-300: 212 212 212;
+  --color-neutral-400: 163 163 163;
+  --color-neutral-500: 115 115 115;
+  --color-neutral-600:  82  82  82;
+  --color-neutral-700:  64  64  64;
+  --color-neutral-800:  38  38  38;
+  --color-neutral-900:  23  23  23;
+  --color-neutral-950:  10  10  10;
+
+  /* ===== SEMANTIC ALIASES (light theme defaults) =====
+   * Эти переменные имеют РАЗНЫЕ значения в .dark.
+   */
+  --bg-base:        var(--color-warm-50);
+  --bg-elevated:    var(--color-warm-100);
+  --bg-sunken:      var(--color-warm-200);
+  --text-primary:   var(--color-warm-900);
+  --text-secondary: var(--color-warm-700);
+  --text-muted:     var(--color-warm-600);
+  --text-inverted:  var(--color-warm-50);
+  --border-subtle:  var(--color-warm-200);
+  --border-default: var(--color-warm-300);
+
+  /* ===== GLASS TOKENS (light theme defaults) ===== */
+  --surface-rgb:    255 255 255;
+  --surface-alpha-low:  0.6;
+  --surface-alpha-high: 0.7;
+  --surface-border-rgb: 255 255 255;
+  --surface-border-alpha-low:  0.4;
+  --surface-border-alpha-high: 0.6;
+
+  /* Blur values согласованы с Tailwind дефолтами — сохраняет визуал. */
+  --glass-blur-sm:   4px;
+  --glass-blur:      8px;
+  --glass-blur-md:  12px;
+  --glass-blur-lg:  16px;
+  --glass-blur-xl:  24px;
+  --glass-blur-2xl: 40px;
+
+  --glass-sidebar-bg:     rgb(var(--surface-rgb) / var(--surface-alpha-low));
+  --glass-sidebar-border: rgb(var(--surface-border-rgb) / var(--surface-border-alpha-low));
+  --glass-panel-bg:       rgb(var(--surface-rgb) / var(--surface-alpha-high));
+  --glass-panel-border:   rgb(var(--surface-border-rgb) / var(--surface-border-alpha-high));
+
+  --overlay-bg-light: rgba(255, 255, 255, 0.20);
+  --overlay-bg-dark:  rgba(0, 0, 0, 0.50);
+
+  /* ===== TYPOGRAPHY & SIZING ===== */
+  --font-sans: var(--font-golos), ui-sans-serif, system-ui, sans-serif;
   --header-height: 56px;
   --footer-height: 40px;
+  --sidebar-width: 240px;
+  --right-dock-width-md: 260px;
+  --right-dock-width-lg: 280px;
 }
+
+.dark {
+  /* ===== SEMANTIC ALIASES (dark theme overrides) ===== */
+  --bg-base:        var(--color-neutral-950);
+  --bg-elevated:    var(--color-neutral-900);
+  --bg-sunken:      var(--color-neutral-800);
+  --text-primary:   var(--color-neutral-50);
+  --text-secondary: 255 255 255;
+  --text-muted:     255 255 255;
+  --text-inverted:  var(--color-neutral-900);
+  --border-subtle:  var(--color-neutral-800);
+  --border-default: var(--color-neutral-700);
+
+  /* ===== GLASS TOKENS (dark theme overrides) ===== */
+  --surface-rgb:    0 0 0;
+  --surface-alpha-low:  0.3;
+  --surface-alpha-high: 0.4;
+  --surface-border-rgb: 255 255 255;
+  --surface-border-alpha-low:  0.1;
+  --surface-border-alpha-high: 0.1;
+}
+
+/* ===========================================================================
+ * Глобальные стили
+ * =========================================================================== */
 
 html,
 body {
