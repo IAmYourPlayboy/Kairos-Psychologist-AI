@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { Sparkles } from "lucide-react";
 
 import { cn } from "@/lib/cn";
@@ -17,6 +17,7 @@ import { useThemeTokens } from "@/hooks/useThemeTokens";
  */
 export function EmptyState() {
   const t = useThemeTokens();
+  const prefersReduced = useReducedMotion();
 
   return (
     <div className="flex flex-col items-center justify-center text-center max-w-xl mx-auto py-12 px-4">
@@ -26,8 +27,8 @@ export function EmptyState() {
           t.glassSidebar,
           t.textMain,
         )}
-        animate={{ y: [0, -8, 0] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        animate={prefersReduced ? undefined : { y: [0, -8, 0] }}
+        transition={prefersReduced ? undefined : { duration: 4, repeat: Infinity, ease: "easeInOut" }}
         aria-hidden="true"
       >
         <Sparkles className="size-8" />
