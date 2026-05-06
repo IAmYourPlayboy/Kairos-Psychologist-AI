@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
-import { Check, Moon, Settings as SettingsIcon, Sun } from "lucide-react";
+import { Check, ImageOff, Moon, Settings as SettingsIcon, Sun } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -106,6 +106,7 @@ export default function SettingsPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {WALLPAPERS.map((wp) => {
                 const isActive = wallpaperId === wp.id;
+                const hasImage = wp.src !== null;
                 return (
                   <button
                     key={wp.id}
@@ -118,15 +119,27 @@ export default function SettingsPage() {
                       isActive
                         ? "border-accent-400 shadow-[0_0_15px_rgba(125,179,194,0.5)]"
                         : "border-transparent hover:border-white/50",
+                      // Когда нет картинки — показываем нейтральный плэйсхолдер
+                      // (диагональная штриховка + иконка), чтобы плитка
+                      // визуально читалась как "пусто".
+                      !hasImage && cn(
+                        "flex items-center justify-center",
+                        t.glassSidebar,
+                        t.textMuted,
+                      ),
                     )}
                   >
-                    <Image
-                      src={wp.src}
-                      alt={wp.label}
-                      fill
-                      sizes="(max-width: 640px) 50vw, 25vw"
-                      className="object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
+                    {hasImage ? (
+                      <Image
+                        src={wp.src as string}
+                        alt={wp.label}
+                        fill
+                        sizes="(max-width: 640px) 50vw, 25vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                    ) : (
+                      <ImageOff className="size-8 opacity-60" aria-hidden="true" />
+                    )}
                     {isActive && (
                       <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
                         <div className="bg-accent-500 text-white rounded-full p-1.5 shadow-lg">
