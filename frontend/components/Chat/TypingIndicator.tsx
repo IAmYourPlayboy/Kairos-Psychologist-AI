@@ -1,21 +1,36 @@
 "use client";
 
+import { motion } from "motion/react";
+
+import { cn } from "@/lib/cn";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
+
 /**
  * Индикатор «бот думает» — три точки с пульсацией.
- * Отображается пока ждём ответ от /api/chat.
+ * Стилизован под glassmorphism пузырь бота.
  */
 export default function TypingIndicator() {
+  const t = useThemeTokens();
+
   return (
-    <div
-      className="flex justify-start mb-4 animate-fade-in"
+    <motion.div
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.2 }}
+      className="flex justify-start mb-3"
       role="status"
       aria-label="Бот печатает ответ"
     >
-      <div className="bg-warm-100 rounded-2xl px-4 py-3 inline-flex items-center gap-1">
-        <span className="w-2 h-2 bg-warm-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
-        <span className="w-2 h-2 bg-warm-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
-        <span className="w-2 h-2 bg-warm-500 rounded-full animate-bounce" />
+      <div
+        className={cn(
+          "rounded-[20px] rounded-bl-[4px] px-4 py-3 inline-flex items-center gap-1.5",
+          t.msgAi,
+        )}
+      >
+        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50 animate-bounce [animation-delay:-0.3s]" />
+        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50 animate-bounce [animation-delay:-0.15s]" />
+        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50 animate-bounce" />
       </div>
-    </div>
+    </motion.div>
   );
 }
