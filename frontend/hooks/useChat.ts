@@ -59,16 +59,43 @@ export function useChat(options: UseChatOptions = {}) {
   const abortRef = useRef<AbortController | null>(null);
 
   /**
-   * При первом монтировании (или при смене sessionId) — подгружаем
-   * историю из локальной БД (Dexie / IndexedDB).
-   * Это позволяет пользователю вернуться к чату после закрытия вкладки.
+   * При смене sessionId — полностью пересинхронизируем UI-state с новой сессией.
+   *
+   * Семантика: useChat представляет данные ИМЕННО ДЛЯ текущего sessionId.
+   * Когда sessionId меняется (новая беседа / переключение на старую):
+   *   1. Отменяем in-flight запрос предыдущей сессии (иначе ответ придёт
+   *      в новую сессию и испортит её state).
+   *   2. Сбрасываем messages/crisisLevel/error/isTyping — мы больше не
+   *      смотрим на ту сессию.
+   *   3. Загружаем историю новой сессии из Dexie. Если её нет (новая беседа) —
+   *      остаёмся с пустым state, и UI покажет EmptyState.
+   *
+   * До этого фикса при пустой новой сессии state не сбрасывался, и
+   * пользователь видел старый чат как будто кнопка «Новый разговор» не
+   * сработала.
    */
   useEffect(() => {
+    // 1. Отменяем in-flight запрос предыдущей сессии.
+    abortRef.current?.abort();
+    abortRef.current = null;
+
+    // 2. Сбрасываем session-scoped state.
+    setMessages([]);
+    setCrisisLevel("normal");
+    setError(null);
+    setIsTyping(false);
+
+    // 3. Если sessionId ещё не подгружен (первый рендер до Context init) —
+    // просто остаёмся в reset-состоянии. Когда sessionId появится, эффект
+    // запустится снова.
     if (!sessionId) return;
+
+    // 4. Загружаем историю новой сессии.
     let cancelled = false;
     void (async () => {
       const local = await loadSessionMessages(sessionId);
-      if (cancelled || local.length === 0) return;
+      if (cancelled) return;
+      if (local.length === 0) return; // новая беседа — state уже пустой
       const ui: UIMessage[] = local.map((m) => ({
         id: m.id,
         role: m.role,

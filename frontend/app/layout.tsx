@@ -1,9 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { Golos_Text } from "next/font/google";
+
+import { AppShell } from "@/components/Layout/AppShell";
+import { KairosProviders } from "@/components/Layout/KairosProviders";
+import { ThemeScript } from "@/components/Layout/ThemeScript";
+
 import "./globals.css";
 
-// Golos Text — основной шрифт приложения.
-// Опции: 400 (regular), 500 (medium), 600 (semibold), 700 (bold).
 const golos = Golos_Text({
   subsets: ["cyrillic", "latin"],
   weight: ["400", "500", "600", "700"],
@@ -23,11 +26,7 @@ export const metadata: Metadata = {
     "AI",
   ],
   authors: [{ name: "Kairos Team" }],
-  // Не индексируем во время разработки
-  robots: {
-    index: false,
-    follow: false,
-  },
+  robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = {
@@ -43,9 +42,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ru" className={golos.variable}>
+    <html lang="ru" className={golos.variable} suppressHydrationWarning>
+      <head>
+        <ThemeScript />
+      </head>
       <body className="font-sans antialiased">
-        {children}
+        <KairosProviders>
+          <AppShell>{children}</AppShell>
+        </KairosProviders>
       </body>
     </html>
   );

@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
+import { Folder, ShieldAlert, Trash2 } from "lucide-react";
 
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { cn } from "@/lib/cn";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
 import {
   deleteAllDossier,
   deleteFact,
@@ -9,19 +15,18 @@ import {
 } from "@/lib/dossierApi";
 import type { DossierFact } from "@/lib/types";
 
-/**
- * Просмотр и управление досье пользователя.
- *
- * Группирует факты по папкам, показывает summary + цитаты + severity.
- * Каждый факт можно удалить. Внизу — кнопка «удалить всё досье».
- *
- * MVP: guestId — из useSession. После Блока 13 (auth) — настоящий userId.
- */
 interface DossierViewProps {
   guestId: string;
 }
 
+/**
+ * Просмотр и управление досье. Логика та же, что была:
+ * fetch / delete fact / wipe all. Стиль — glassmorphism, motion-анимации,
+ * темовые токены.
+ */
 export default function DossierView({ guestId }: DossierViewProps) {
+  const t = useThemeTokens();
+  const shouldReduceMotion = useReducedMotion();
   const [facts, setFacts] = useState<DossierFact[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isWiping, setIsWiping] = useState(false);
@@ -74,15 +79,17 @@ export default function DossierView({ guestId }: DossierViewProps) {
 
   if (error) {
     return (
-      <div className="text-crisis-700 p-4 max-w-3xl mx-auto">
-        ⚠️ {error}
+      <div className="max-w-3xl mx-auto p-4">
+        <Card className={cn(t.glassPanel, "p-4 text-crisis-500")}>
+          ⚠️ {error}
+        </Card>
       </div>
     );
   }
 
   if (facts === null) {
     return (
-      <div className="text-warm-600 p-4 max-w-3xl mx-auto">
+      <div className={cn("max-w-3xl mx-auto p-4", t.textMuted)}>
         Загружаю досье...
       </div>
     );
@@ -91,16 +98,18 @@ export default function DossierView({ guestId }: DossierViewProps) {
   if (facts.length === 0) {
     return (
       <div className="max-w-3xl mx-auto p-4 space-y-4">
-        <header className="border-b border-warm-200 pb-4">
-          <h1 className="text-xl font-semibold text-warm-900">
+        <header>
+          <h1 className={cn("text-xl font-semibold", t.textMain)}>
             Что знает Кайрос
           </h1>
         </header>
-        <div className="text-warm-600">
-          Кайрос ещё ничего не запомнил о тебе. Это появится после нескольких
-          бесед — обычно через 15 минут после того, как ты замолкаешь, бот
-          просматривает разговор и сохраняет важное в досье.
-        </div>
+        <Card className={cn(t.glassPanel, "p-6")}>
+          <p className={cn("leading-relaxed", t.textMuted)}>
+            Кайрос ещё ничего не запомнил о тебе. Это появится после нескольких
+            бесед — обычно через 15 минут после того, как ты замолкаешь, бот
+            просматривает разговор и сохраняет важное в досье.
+          </p>
+        </Card>
       </div>
     );
   }
@@ -114,36 +123,46 @@ export default function DossierView({ guestId }: DossierViewProps) {
 
   return (
     <div className="max-w-3xl mx-auto p-4 space-y-6">
-      <header className="border-b border-warm-200 pb-4">
-        <h1 className="text-xl font-semibold text-warm-900">
+      <motion.header
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={shouldReduceMotion ? { duration: 0 } : undefined}
+      >
+        <h1 className={cn("text-2xl font-semibold tracking-tight", t.textMain)}>
           Что знает Кайрос
         </h1>
-        <p className="text-sm text-warm-600 mt-1">
+        <p className={cn("text-sm mt-1", t.textMuted)}>
           Это всё, что Кайрос запомнил о тебе из ваших разговоров. Ты можешь
           удалить любой факт или всё сразу.
         </p>
-      </header>
+      </motion.header>
 
-      {Object.entries(byFolder).map(([folder, folderFacts]) => (
-        <section key={folder}>
-          <h2 className="text-md font-medium text-warm-800 mb-2">
-            {folder}
-          </h2>
-          <div className="space-y-3">
+      {Object.entries(byFolder).map(([folder, folderFacts], folderIdx) => (
+        <motion.section
+          key={folder}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={shouldReduceMotion ? { duration: 0 } : { delay: folderIdx * 0.05 }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <Folder className={cn("size-4", t.textMuted)} />
+            <h2 className={cn("text-md font-medium", t.textMain)}>{folder}</h2>
+          </div>
+          <div className="space-y-2.5">
             {folderFacts.map((f) => (
-              <article
+              <Card
                 key={f.id}
-                className={`bg-warm-50 border rounded-lg p-4 ${
-                  f.superseded
-                    ? "border-warm-300 opacity-60"
-                    : "border-warm-200"
-                }`}
+                className={cn(
+                  t.glassPanel,
+                  "p-4 transition-opacity",
+                  f.superseded && "opacity-60",
+                )}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">
-                    <p className="text-warm-900">
+                    <p className={cn("leading-relaxed", t.textMain)}>
                       {f.superseded && (
-                        <span className="text-xs text-warm-500 mr-2">
+                        <span className={cn("text-xs mr-2", t.textMuted)}>
                           [устарело]
                         </span>
                       )}
@@ -154,23 +173,29 @@ export default function DossierView({ guestId }: DossierViewProps) {
                         {f.tags.map((tag) => (
                           <span
                             key={tag}
-                            className="text-xs px-2 py-0.5 bg-warm-200 text-warm-800 rounded"
+                            className={cn(
+                              "text-xs px-2 py-0.5 rounded-md",
+                              t.glassSidebar,
+                              t.textMuted,
+                            )}
                           >
                             {tag}
                           </span>
                         ))}
                       </div>
                     )}
-                    <div className="text-xs text-warm-500 mt-2">
+                    <div className={cn("text-xs mt-2", t.textMuted)}>
                       severity: {f.severity.toFixed(2)} · упомянуто{" "}
                       {f.times_mentioned} раз
                     </div>
                     {f.quotes.length > 0 && (
                       <details className="mt-2">
-                        <summary className="text-xs text-warm-600 cursor-pointer">
+                        <summary
+                          className={cn("text-xs cursor-pointer", t.textMuted)}
+                        >
                           Цитаты ({f.quotes.length})
                         </summary>
-                        <ul className="mt-2 space-y-1 text-sm text-warm-700 italic">
+                        <ul className={cn("mt-2 space-y-1 text-sm italic", t.textMain)}>
                           {f.quotes.map((q, i) => (
                             <li key={i}>«{q.text}»</li>
                           ))}
@@ -178,33 +203,46 @@ export default function DossierView({ guestId }: DossierViewProps) {
                       </details>
                     )}
                   </div>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleDeleteFact(f.id)}
-                    className="text-xs text-crisis-700 hover:text-crisis-900 px-2 py-1"
                     aria-label="Удалить этот факт"
+                    className="text-crisis-500 hover:bg-crisis-500/10"
                   >
-                    Удалить
-                  </button>
+                    <Trash2 className="size-4" />
+                  </Button>
                 </div>
-              </article>
+              </Card>
             ))}
           </div>
-        </section>
+        </motion.section>
       ))}
 
-      <div className="border-t border-warm-200 pt-4">
-        <button
-          onClick={handleWipeAll}
-          disabled={isWiping}
-          className="px-4 py-2 bg-crisis-100 hover:bg-crisis-200 text-crisis-900 rounded-lg text-sm font-medium disabled:opacity-50"
-        >
-          {isWiping ? "Удаляю..." : "Удалить всё досье"}
-        </button>
-        <p className="text-xs text-warm-500 mt-2">
-          После удаления Кайрос забудет всё, что знал о тебе. Это нельзя
-          отменить.
-        </p>
-      </div>
+      <Card className={cn(t.glassPanel, "p-4 mt-6 border-crisis-500/20")}>
+        <div className="flex items-start gap-3">
+          <div className="size-9 rounded-full bg-crisis-500/15 text-crisis-500 flex items-center justify-center shrink-0">
+            <ShieldAlert className="size-4" />
+          </div>
+          <div className="flex-1">
+            <h3 className={cn("font-medium mb-1", t.textMain)}>
+              Удалить всё досье
+            </h3>
+            <p className={cn("text-xs mb-3", t.textMuted)}>
+              После удаления Кайрос забудет всё, что знал о тебе. Это нельзя
+              отменить.
+            </p>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleWipeAll}
+              disabled={isWiping}
+            >
+              {isWiping ? "Удаляю..." : "Удалить всё досье"}
+            </Button>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }

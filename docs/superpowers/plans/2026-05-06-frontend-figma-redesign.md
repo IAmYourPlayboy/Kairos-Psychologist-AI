@@ -237,12 +237,12 @@ cd d:/Kairos && git add frontend/hooks/useTheme.ts && git commit -m "feat(fronte
 ### Task 1.5: Хук `useThemeTokens` (порт из Figma)
 
 **Files:**
-- Create: `d:/Kairos/frontend/lib/theme-tokens.ts`
+- Create: `d:/Kairos/frontend/hooks/useThemeTokens.ts`
 
 - [ ] **Step 1: Создать файл**
 
 ```ts
-// frontend/lib/theme-tokens.ts
+// frontend/hooks/useThemeTokens.ts
 "use client";
 
 import { useTheme } from "@/hooks/useTheme";
@@ -320,7 +320,7 @@ Expected: без ошибок.
 - [ ] **Step 3: Commit**
 
 ```bash
-cd d:/Kairos && git add frontend/lib/theme-tokens.ts && git commit -m "feat(frontend): add useThemeTokens hook (port from Figma Make)"
+cd d:/Kairos && git add frontend/hooks/useThemeTokens.ts && git commit -m "feat(frontend): add useThemeTokens hook (port from Figma Make)"
 ```
 
 ---
@@ -925,7 +925,7 @@ cd d:/Kairos && git add frontend/hooks/useWallpaper.ts && git commit -m "feat(fr
 import Image from "next/image";
 
 import { cn } from "@/lib/cn";
-import { useThemeTokens } from "@/lib/theme-tokens";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
 import { useWallpaper } from "@/hooks/useWallpaper";
 
 /**
@@ -1423,7 +1423,7 @@ import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import { useTheme } from "@/hooks/useTheme";
-import { useThemeTokens } from "@/lib/theme-tokens";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
 
 /**
  * Кнопка переключения темы. Размещается в RightDock.
@@ -1536,7 +1536,7 @@ import { Lightbulb, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { cn } from "@/lib/cn";
-import { useThemeTokens } from "@/lib/theme-tokens";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
 import { getTipOfTheDay } from "@/lib/tips";
 
 const STORAGE_KEY = "kairos.tip-dismissed-day";
@@ -1657,7 +1657,7 @@ import { ThemeToggle } from "@/components/Layout/ThemeToggle";
 import { TipCard } from "@/components/Layout/TipCard";
 import { cn } from "@/lib/cn";
 import { useTheme } from "@/hooks/useTheme";
-import { useThemeTokens } from "@/lib/theme-tokens";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
 
 /**
  * Правый плавающий dock: тоггл темы + аватар (ведёт на /profile) + TipCard.
@@ -2024,7 +2024,7 @@ import {
   DialogTitle,
 } from "@/components/ui/Dialog";
 import { cn } from "@/lib/cn";
-import { useThemeTokens } from "@/lib/theme-tokens";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
 
 interface RenameChatDialogProps {
   open: boolean;
@@ -2126,7 +2126,7 @@ import { cn } from "@/lib/cn";
 import { useSession } from "@/hooks/useSession";
 import { useSessions, type SessionMeta } from "@/hooks/useSessions";
 import { useSidebar } from "@/hooks/useSidebar";
-import { useThemeTokens } from "@/lib/theme-tokens";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
 
 const SIDEBAR_WIDTH = 240;
 
@@ -2372,7 +2372,7 @@ import { Button } from "@/components/ui/Button";
 import { SIDEBAR_WIDTH } from "@/components/Layout/Sidebar";
 import { cn } from "@/lib/cn";
 import { useSidebar } from "@/hooks/useSidebar";
-import { useThemeTokens } from "@/lib/theme-tokens";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
 
 /**
  * Две плавающие кнопки в левом нижнем углу:
@@ -2570,7 +2570,7 @@ import { motion } from "motion/react";
 import { Sparkles } from "lucide-react";
 
 import { cn } from "@/lib/cn";
-import { useThemeTokens } from "@/lib/theme-tokens";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
 
 /**
  * Приветственное сообщение на пустом экране.
@@ -2646,7 +2646,7 @@ import { motion } from "motion/react";
 
 import HumanTypingEffect from "./HumanTypingEffect";
 import { cn } from "@/lib/cn";
-import { useThemeTokens } from "@/lib/theme-tokens";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
 
 interface MessageBubbleProps {
   role: "user" | "assistant";
@@ -2761,7 +2761,7 @@ cd d:/Kairos && git add frontend/components/Chat/MessageBubble.tsx && git commit
 import { motion } from "motion/react";
 
 import { cn } from "@/lib/cn";
-import { useThemeTokens } from "@/lib/theme-tokens";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
 
 /**
  * Индикатор «бот думает» — три точки с пульсацией.
@@ -2826,7 +2826,7 @@ import { ArrowUp } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
-import { useThemeTokens } from "@/lib/theme-tokens";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
 
 interface InputAreaProps {
   onSend: (text: string) => void;
@@ -2981,7 +2981,7 @@ import SessionFeedback from "@/components/Feedback/SessionFeedback";
 import { cn } from "@/lib/cn";
 import { useChat } from "@/hooks/useChat";
 import { useSidebar } from "@/hooks/useSidebar";
-import { useThemeTokens } from "@/lib/theme-tokens";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
 
 import { EmptyState } from "./EmptyState";
 import InputArea from "./InputArea";
@@ -3373,7 +3373,7 @@ import {
   DialogTitle,
 } from "@/components/ui/Dialog";
 import { cn } from "@/lib/cn";
-import { useThemeTokens } from "@/lib/theme-tokens";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
 import type { CrisisContact } from "@/lib/types";
 
 interface CrisisPanelProps {
@@ -3603,7 +3603,7 @@ import { motion } from "motion/react";
 import { ThumbsDown, ThumbsUp } from "lucide-react";
 
 import { cn } from "@/lib/cn";
-import { useThemeTokens } from "@/lib/theme-tokens";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
 import type { FeedbackEventType } from "@/lib/types";
 
 interface MessageFeedbackProps {
@@ -3713,7 +3713,7 @@ import { motion } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { cn } from "@/lib/cn";
-import { useThemeTokens } from "@/lib/theme-tokens";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
 import type { FeedbackEventType } from "@/lib/types";
 
 interface SessionFeedbackProps {
@@ -3954,7 +3954,7 @@ import { Folder, ShieldAlert, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/cn";
-import { useThemeTokens } from "@/lib/theme-tokens";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
 import {
   deleteAllDossier,
   deleteFact,
@@ -4219,7 +4219,7 @@ cd d:/Kairos && git add frontend/components/Dossier/DossierView.tsx && git commi
 import DossierView from "@/components/Dossier/DossierView";
 import { useSession } from "@/hooks/useSession";
 import { cn } from "@/lib/cn";
-import { useThemeTokens } from "@/lib/theme-tokens";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
 
 /**
  * Страница профиля.
@@ -4306,7 +4306,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/cn";
 import { useTheme } from "@/hooks/useTheme";
-import { useThemeTokens } from "@/lib/theme-tokens";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
 import { useWallpaper } from "@/hooks/useWallpaper";
 import { WALLPAPERS } from "@/lib/wallpapers";
 
