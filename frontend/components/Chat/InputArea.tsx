@@ -110,11 +110,11 @@ export default function InputArea({
           )}
         >
           Это не замена врачу или психологу. В кризисе звони{" "}
-          <a href="tel:112" className="underline">
+          <a href="tel:112" aria-label="1 1 2" className="underline">
             112
           </a>{" "}
           или{" "}
-          <a href="tel:88003334434" className="underline">
+          <a href="tel:88003334434" aria-label="8 800 333 44 34" className="underline">
             8-800-333-44-34
           </a>
           .
