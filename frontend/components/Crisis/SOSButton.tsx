@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { LifeBuoy } from "lucide-react";
 
 import { cn } from "@/lib/cn";
@@ -21,6 +21,7 @@ interface SOSButtonProps {
 export default function SOSButton({ crisisLevel, onClick }: SOSButtonProps) {
   const isAlert = crisisLevel === "high" || crisisLevel === "immediate";
   const isElevated = crisisLevel === "elevated";
+  const shouldReduceMotion = useReducedMotion();
 
   const baseClasses =
     "rounded-full font-semibold text-sm transition-all duration-300 shadow-lg backdrop-blur-xl border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400";
@@ -41,8 +42,8 @@ export default function SOSButton({ crisisLevel, onClick }: SOSButtonProps) {
       type="button"
       onClick={onClick}
       aria-label="Открыть кризисные контакты"
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+      whileHover={shouldReduceMotion ? undefined : { scale: 1.05 }}
+      whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
       className={cn(
         baseClasses,
         stateClasses,

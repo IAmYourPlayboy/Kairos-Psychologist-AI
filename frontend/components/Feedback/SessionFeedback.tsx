@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -25,6 +25,7 @@ export default function SessionFeedback({
   onSkip,
 }: SessionFeedbackProps) {
   const t = useThemeTokens();
+  const shouldReduceMotion = useReducedMotion();
   const [submitted, setSubmitted] = useState<FeedbackEventType | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -44,8 +45,9 @@ export default function SessionFeedback({
   if (submitted) {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={shouldReduceMotion ? { duration: 0 } : undefined}
         className="my-6 mx-auto max-w-md"
       >
         <Card className={cn(t.glassPanel, "p-4 text-center")}>

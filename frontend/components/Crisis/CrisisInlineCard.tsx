@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { AlertTriangle, Phone } from "lucide-react";
 
 import { cn } from "@/lib/cn";
@@ -23,6 +23,7 @@ export default function CrisisInlineCard({
   contacts,
 }: CrisisInlineCardProps) {
   const { isDark } = useTheme();
+  const shouldReduceMotion = useReducedMotion();
 
   if (level === "normal" || contacts.length === 0) return null;
 
@@ -48,9 +49,9 @@ export default function CrisisInlineCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
+      initial={shouldReduceMotion ? false : { opacity: 0, y: 10, scale: 0.97 }}
+      animate={shouldReduceMotion ? { opacity: 1, y: 0, scale: 1 } : { opacity: 1, y: 0, scale: 1 }}
+      transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.3, ease: "easeOut" }}
       className={cn(
         "rounded-2xl border-2 p-3 my-2 max-w-[80%] backdrop-blur-md",
         colorClass[styledLevel],
