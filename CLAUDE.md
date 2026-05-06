@@ -1,6 +1,6 @@
 # AI-ПСИХОЛОГ (KAIROS): ПЛАН РЕАЛИЗАЦИИ
 
-> **Версия**: 3.4 | **Дата**: Май 2026 (Сессия 18)
+> **Версия**: 3.5 | **Дата**: Май 2026 (Сессия 19)
 > **Назначение**: Единственный источник правды о проекте для AI-ассистента и разработчика.
 > **Как пользоваться**: открой Claude Code, прикрепи этот файл и говори «делай блок X из PROGRESS.md».
 
@@ -970,6 +970,24 @@ python agents/runner.py --review
 - **Решение по fallback**: rule-based страховки больше нет. Если LLM упал — честное «извини, не могу» + SOS-кнопка остаётся доступна (статичные контакты в `crisis/contacts.py`).
 - UI досье на `/profile` (просмотр + удаление, ФЗ-152 «право на удаление»). MVP-авторизация через `guest_id` query (после Блока 13 — JWT).
 - Дизайн: `docs/superpowers/specs/2026-05-02-perception-layer-design.md`. План: `docs/superpowers/plans/2026-05-02-perception-layer-plan.md`.
+
+**Сессия 19** (Май 2026): 🎨 **Frontend redesign по черновику Figma Make.** Ключевые решения:
+- **Visual:** glassmorphism + dark/light тема с auto-detect по локальному времени (21:00–06:59 → dark при первом визите) + сайдбар сессий + плавающие элементы (Settings, Toggle, Theme, Avatar, SOS, TipCard).
+- **Stack:** остаёмся на Next.js 16 + Tailwind v3 + Dexie. Добавлены: `motion` (анимации), `lucide-react` (иконки), `sonner` (тосты), `@radix-ui` (avatar/dialog/slot), `class-variance-authority`, `clsx + tailwind-merge`. Никаких MUI/react-router (MUI был в Figma но не использовался).
+- **ФЗ-152:** все wallpapers локально в `frontend/public/wallpapers/` (4 JPG ~300-560 KB). Никаких прямых ссылок на Unsplash/GCS на runtime.
+- **Сайдбар:** гибрид single+multi-chat. Один активный чат по умолчанию, кнопка «+» для новой сессии. На мобиле закрыт по умолчанию. Источник списка — Dexie (бэкенд эндпоинтов `/api/sessions` пока нет). Контекстное меню: ПКМ или двойной клик → переименовать / удалить.
+- **Кризис: API всех 5 компонентов сохранён 1-в-1.** SOSButton, CrisisPanel, CrisisInlineCard, MessageFeedback, SessionFeedback переодеты в новый стиль, но props и поведение не изменились. `CrisisPanel` переписана на Radix Dialog (focus trap + Esc + click-outside из коробки). Автооткрытие при `crisis_level === "immediate"` сохранено.
+- **EmptyState:** одно приветственное сообщение вместо карточек-затравок. Принцип: пользователь сам формулирует, что у него происходит — затравки могут навязать рамку.
+- **A11y:** глобальный `prefers-reduced-motion: reduce` в `globals.css` + локальный `useReducedMotion()` в каждом motion-компоненте. `aria-label` со spaced-digits на всех `tel:` ссылках (screen reader произносит цифры по одной). Все интерактивные элементы Tab-focused с видимыми focus-rings.
+- **Производительность:** все новые библиотеки tree-shake. Production build чистый (5 страниц, статика). Bundle делта ~50 KB gz. `prefers-reduced-motion` уважается.
+- **Design tokens:** `useThemeTokens()` хук — единая точка маппинга `isDark` → 15 групп Tailwind-классов (glassSidebar, glassPanel, msgUser, msgAi, btnPrimary, inputWrapper, etc.). Файл — в `hooks/useThemeTokens.ts` (изначально создавался как `lib/theme-tokens.ts`, но переехал после code-quality review — `"use client"` в `lib/` не пропагирует через границы Server Components).
+- **Что НЕ делалось (отложено):**
+  - Аутентификация (`/auth/*`) — Блок 13 PROGRESS.md
+  - Голосовой ввод и attachments — после MVP
+  - Бэкенд-эндпоинты `GET/PATCH/DELETE /api/sessions` — отдельный блок (фронт работает через Dexie до их появления)
+  - Manual regression тест кризисных сценариев — пользователь должен прогнать вручную перед merge: каждый из 4 уровней (`normal`/`elevated`/`high`/`immediate`)
+- **Дизайн:** `docs/superpowers/specs/2026-05-06-frontend-figma-redesign-design.md`. План: `docs/superpowers/plans/2026-05-06-frontend-figma-redesign.md`.
+- **Worktree:** работа велась в `.claude/worktrees/figma-redesign/` на ветке `worktree-figma-redesign` через subagent-driven development (49 задач, 8 фаз, ~70 коммитов с фиксами после двух-стадийных code reviews).
 
 ---
 
