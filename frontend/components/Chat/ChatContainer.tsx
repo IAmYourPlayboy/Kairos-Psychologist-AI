@@ -137,9 +137,8 @@ export default function ChatContainer() {
           )}
 
           {/* Кнопка "Завершить" — только если есть ответы бота и сессия не завершена */}
-          {chat.messages.some((m) => m.role === "assistant") &&
-            !sessionEnded &&
-            chat.messages.length > 0 && (
+          {!sessionEnded &&
+            chat.messages.some((m) => m.role === "assistant") && (
               <button
                 type="button"
                 onClick={() => setSessionEnded(true)}
