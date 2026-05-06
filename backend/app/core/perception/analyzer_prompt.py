@@ -7,7 +7,12 @@
 
 Промпт умышленно требует от анализатора рассуждать (не классифицировать
 по словарю), и явно говорит, что rule-based grep ушёл.
+
+Список папок генерируется из folders.py (единый источник правды).
 """
+
+from app.core.perception.folders import render_folder_taxonomy_for_prompt
+
 
 ANALYZER_SYSTEM_PROMPT = """\
 Ты — внутренний аналитик Кайроса. Ты НЕ отвечаешь пользователю.
@@ -32,21 +37,7 @@ ANALYZER_SYSTEM_PROMPT = """\
    разные области — это нормально. Главное чтобы каждый элемент был валидный.
 
    Допустимые папки и подпапки:
-   - identity (без подпапок)
-   - childhood/family, childhood/school, childhood/events
-   - family/parents, family/siblings, family/grandparents, family/extended
-   - relationships/friends, relationships/romantic, relationships/school_peers,
-     relationships/colleagues
-   - work_school/current, work_school/past, work_school/performance
-   - losses/death, losses/breakup, losses/relocation, losses/other
-   - triggers/sensory, triggers/situational, triggers/relational
-   - resources/people, resources/activities, resources/skills, resources/places
-   - values (без подпапок)
-   - health/body, health/sleep, health/illness, health/appearance, health/mental
-   - crisis_history/past_attempts, crisis_history/past_episodes,
-     crisis_history/protective_factors
-   - goals/short_term, goals/long_term
-   - routines/daily, routines/weekly, routines/rituals
+{{FOLDER_TAXONOMY}}
 
    ПРИМЕРЫ folder_hints:
    - "пацаны в школе угрожают" →
@@ -89,6 +80,15 @@ ANALYZER_SYSTEM_PROMPT = """\
 Никакого текста вне JSON. Никаких объяснений. Никаких markdown-обёрток.
 Только сырой JSON.
 """
+
+# Подставляем актуальный список папок из folders.py — единый источник правды.
+# Если поменялась SUBFOLDERS — промпт обновится при следующем импорте.
+ANALYZER_SYSTEM_PROMPT = ANALYZER_SYSTEM_PROMPT.replace(
+    "{{FOLDER_TAXONOMY}}",
+    "\n".join(
+        "   " + line for line in render_folder_taxonomy_for_prompt().splitlines()
+    ),
+)
 
 
 def build_analyzer_user_prompt(

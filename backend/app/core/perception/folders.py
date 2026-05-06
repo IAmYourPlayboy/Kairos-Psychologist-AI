@@ -68,6 +68,73 @@ def is_valid_folder(folder: str) -> bool:
     return folder in TOP_LEVEL_FOLDERS
 
 
+def render_folder_taxonomy_for_prompt() -> str:
+    """Сгенерировать текстовое описание папок для analyzer-промпта.
+
+    Это единственный источник правды для списка папок в analyzer_prompt.py.
+    Добавил папку в SUBFOLDERS → промпт обновился автоматически.
+
+    Returns:
+        Многострочный текст вида:
+            - identity (без подпапок)
+            - family/parents, family/siblings, family/grandparents, family/extended
+            - ...
+    """
+    lines: list[str] = []
+    # Сохраняем порядок: identity → childhood → ... как в SUBFOLDERS dict
+    # (Python 3.7+ гарантирует порядок dict insertion).
+    for folder, subs in SUBFOLDERS.items():
+        if folder == "custom":
+            lines.append(
+                "- custom/<твоё английское snake_case имя> — "
+                "для всего что не вписывается выше "
+                "(например custom/medical, custom/army_recruitment)"
+            )
+            continue
+        if not subs:
+            lines.append(f"- {folder} (без подпапок)")
+        else:
+            # Сортируем подпапки для стабильного вывода.
+            sub_pairs = ", ".join(
+                f"{folder}/{s}" for s in sorted(subs)
+            )
+            lines.append(f"- {sub_pairs}")
+    return "\n".join(lines)
+
+
+def render_parent_child_pairs_for_prompt() -> str:
+    """Сгенерировать описание папок для reflection extract-промпта.
+
+    Формат специально другой (родитель X → потомки Y), чтобы LLM
+    не склеивал folder и subfolder через слэш. Этот формат был причиной
+    бага в первой версии — модель копировала "family/siblings" в одно поле.
+
+    Returns:
+        Многострочный текст вида:
+            - родитель "identity": подпапка null (без потомков).
+            - родитель "family": потомки "parents", "siblings", "grandparents", "extended".
+            - ...
+    """
+    lines: list[str] = []
+    for folder, subs in SUBFOLDERS.items():
+        if folder == "custom":
+            lines.append(
+                '- родитель "custom": в потомка пиши свободное английское '
+                "snake_case имя (medical_visits, army_recruitment, и т.п.) — "
+                "для всего что не вписывается выше."
+            )
+            continue
+        if not subs:
+            lines.append(
+                f'- родитель "{folder}": подпапка null '
+                "(только null — без потомков)."
+            )
+        else:
+            children = ", ".join(f'"{s}"' for s in sorted(subs))
+            lines.append(f'- родитель "{folder}": потомки {children}.')
+    return "\n".join(lines)
+
+
 def is_valid_subfolder(folder: str, subfolder: str | None) -> bool:
     """Проверить, что (folder, subfolder) — допустимая пара.
 

@@ -151,3 +151,52 @@ def test_compute_high_risk_keeps_depth_shallow():
     )
     new = compute_next_mood(prev, _report(risk="high", trust=0.9))
     assert new.depth <= 0.5
+
+
+# ============================================================================
+# Расширяемая классификация эмоций (Фикс Б)
+# ============================================================================
+
+
+def test_emotion_classifier_recognizes_vulnerable_variants():
+    """Множество синонимов уязвимых эмоций → категория vulnerable."""
+    from app.core.perception.mood import _classify_emotion
+
+    for emotion in [
+        "страх", "ужас", "испуг",
+        "грусть", "печаль", "тоска",
+        "одиночество",
+        "беспомощность", "никчёмность",
+        "отчаяние", "безнадёжность", "уныние", "истощение",
+        "стыд", "вина", "обида",
+        "тревога", "паника",
+    ]:
+        assert _classify_emotion(emotion) == "vulnerable", f"{emotion} should be vulnerable"
+
+
+def test_emotion_classifier_recognizes_angry_variants():
+    from app.core.perception.mood import _classify_emotion
+
+    for emotion in ["злость", "гнев", "ярость", "ненависть", "раздражение"]:
+        assert _classify_emotion(emotion) == "angry", f"{emotion} should be angry"
+
+
+def test_emotion_classifier_unknown_returns_none():
+    from app.core.perception.mood import _classify_emotion
+
+    for emotion in ["радость", "спокойствие", "нейтрально", ""]:
+        assert _classify_emotion(emotion) is None
+
+
+def test_warmth_delta_for_extended_emotion_set():
+    """Раньше «безнадёжность», «уныние» получали 0.0 — теперь +0.1."""
+    from app.core.perception.mood import _emotion_warmth_delta
+
+    assert _emotion_warmth_delta("безнадёжность") == 0.1
+    assert _emotion_warmth_delta("уныние") == 0.1
+    assert _emotion_warmth_delta("истощение") == 0.1
+    assert _emotion_warmth_delta("обида") == 0.1
+    # Гневные категории сохраняют -0.05
+    assert _emotion_warmth_delta("раздражение") == -0.05
+    # Неизвестные — 0.0
+    assert _emotion_warmth_delta("радость") == 0.0

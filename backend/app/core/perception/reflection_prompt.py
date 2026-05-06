@@ -4,8 +4,13 @@
 - EXTRACT: извлечение фактов-кандидатов из необработанного хвоста разговора.
 - DEDUPE: семантическое сравнение факта-кандидата с существующими.
 
+Список папок для extract-промпта генерируется из folders.py
+(единый источник правды).
+
 Дизайн: §7 в spec.
 """
+
+from app.core.perception.folders import render_parent_child_pairs_for_prompt
 
 EXTRACT_SYSTEM_PROMPT = """\
 Ты — рефлексирующий аналитик Кайроса. Ты НЕ отвечаешь пользователю.
@@ -42,21 +47,7 @@ candidate_folder и candidate_subfolder — это ДВА РАЗНЫХ ПОЛЯ.
 а не одно значение. Каждую такую пару записывай в JSON как ДВЕ строки.
 
 Допустимые ПАРЫ (родитель → потомок):
-- родитель "identity": подпапка null (только null — без потомков).
-- родитель "childhood": потомки "family", "school", "events".
-- родитель "family": потомки "parents", "siblings", "grandparents", "extended".
-- родитель "relationships": потомки "friends", "romantic", "school_peers", "colleagues".
-- родитель "work_school": потомки "current", "past", "performance".
-- родитель "losses": потомки "death", "breakup", "relocation", "other".
-- родитель "triggers": потомки "sensory", "situational", "relational".
-- родитель "resources": потомки "people", "activities", "skills", "places".
-- родитель "values": подпапка null.
-- родитель "health": потомки "body", "sleep", "illness", "appearance", "mental".
-- родитель "crisis_history": потомки "past_attempts", "past_episodes", "protective_factors".
-- родитель "goals": потомки "short_term", "long_term".
-- родитель "routines": потомки "daily", "weekly", "rituals".
-- родитель "custom": в потомка пиши свободное английское snake_case имя
-  (medical_visits, army_recruitment, и т.п.) — для всего что не вписывается выше.
+{{PARENT_CHILD_PAIRS}}
 
 ПРАВИЛЬНЫЙ пример факта:
 {
@@ -93,6 +84,12 @@ candidate_folder и candidate_subfolder — это ДВА РАЗНЫХ ПОЛЯ.
 
 Никакого текста вне JSON. Только сырой JSON-массив.
 """
+
+# Подставляем актуальный список папок из folders.py — единый источник правды.
+EXTRACT_SYSTEM_PROMPT = EXTRACT_SYSTEM_PROMPT.replace(
+    "{{PARENT_CHILD_PAIRS}}",
+    render_parent_child_pairs_for_prompt(),
+)
 
 
 def build_extract_user_prompt(
