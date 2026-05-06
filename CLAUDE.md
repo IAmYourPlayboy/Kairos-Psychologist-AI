@@ -1,6 +1,6 @@
 # AI-ПСИХОЛОГ (KAIROS): ПЛАН РЕАЛИЗАЦИИ
 
-> **Версия**: 3.5 | **Дата**: Май 2026 (Сессия 19)
+> **Версия**: 3.6 | **Дата**: Май 2026 (Сессия 20)
 > **Назначение**: Единственный источник правды о проекте для AI-ассистента и разработчика.
 > **Как пользоваться**: открой Claude Code, прикрепи этот файл и говори «делай блок X из PROGRESS.md».
 
@@ -988,6 +988,26 @@ python agents/runner.py --review
   - Manual regression тест кризисных сценариев — пользователь должен прогнать вручную перед merge: каждый из 4 уровней (`normal`/`elevated`/`high`/`immediate`)
 - **Дизайн:** `docs/superpowers/specs/2026-05-06-frontend-figma-redesign-design.md`. План: `docs/superpowers/plans/2026-05-06-frontend-figma-redesign.md`.
 - **Worktree:** работа велась в `.claude/worktrees/figma-redesign/` на ветке `worktree-figma-redesign` через subagent-driven development (49 задач, 8 фаз, ~70 коммитов с фиксами после двух-стадийных code reviews).
+
+**Сессия 20** (Май 2026): 🛡️ **Устойчивость PerceptionReport к нестабильности LLM-аналайзера.** Точечный фикс двух багов из Manual Regression Сессии 19:
+- **Баг A** («ввв» / пограничный ввод): LLM возвращал валидный JSON с пустыми `dominant_emotion`/`theme` → Pydantic `min_length=1` валился → `AnalyzerError` → fallback с ошибкой в чате.
+- **Баг B** (первое «хочу умереть»): LLM возвращал не-JSON → JSONDecodeError → fallback с `crisis_level: "normal"` → CrisisPanel НЕ открывался автоматически.
+
+**Решение:** двухслойная защита, **БЕЗ rule-based grep и БЕЗ retry**:
+- Слой 1 (`types.py`): `field_validator(mode='before')` нормализует пустые `dominant_emotion`/`theme`/`what_user_needs`/`inner_monologue` в дефолтные строки. Длинные обрезаются. `min_length=1` снят.
+- Слой 2 (`analyzer_prompt.py`): пункт 7 — явная инструкция LLM «если не знаешь — пиши `неизвестно`».
+
+**3 ADR зафиксированы в спеке:**
+- **ADR-1:** Pydantic нормализует «не знаю» вместо валить ошибку.
+- **ADR-2:** НЕТ rule-based safety-net в `chat.py`. Принцип Сессии 18 §9 свят. SOS-кнопка как пассивная защита — единственная страховка при сбое. Известный остаточный риск Бага B принят.
+- **ADR-3:** НЕТ retry в `analyzer.py`. Один вызов = один результат. Latency в кризисе хуже честного fallback.
+
+**11 unit-тестов** в `tests/perception/test_perception_robustness.py`.
+
+**Не трогали:** `analyzer.py`, `chat.py`, `pipeline.py`, frontend.
+
+Дизайн: `docs/superpowers/specs/2026-05-06-perception-robustness-design.md`
+План: `docs/superpowers/plans/2026-05-06-perception-robustness.md`
 
 ---
 

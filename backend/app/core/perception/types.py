@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 # ============================================================================
@@ -16,6 +16,24 @@ from pydantic import BaseModel, Field
 
 
 RiskLevel = Literal["normal", "elevated", "high", "immediate"]
+
+
+def _normalize_str(v: object, default: str, limit: int) -> str:
+    """Нормализовать «не знаю» от LLM в дефолтное значение, обрезать длинные строки.
+
+    Используется в `field_validator(mode='before')` для строковых полей
+    PerceptionReport. Сценарии:
+    - v is None / "" / "   " / 0 / False / []: возвращаем `default`.
+    - v длиннее `limit` символов: обрезаем до `limit`.
+    - иначе: возвращаем str(v).
+
+    Контракт спеки: `if not v or (isinstance(v, str) and not v.strip())`.
+    `not v` ловит None / пустую строку / 0 / False — на случай если LLM
+    вернёт нестроковые значения (защитное программирование).
+    """
+    if not v or (isinstance(v, str) and not v.strip()):
+        return default
+    return str(v)[:limit]
 
 
 class PerceptionReport(BaseModel):
@@ -37,8 +55,8 @@ class PerceptionReport(BaseModel):
     )
 
     dominant_emotion: str = Field(
-        ..., min_length=1, max_length=50,
-        description="Главная эмоция (русское слово)",
+        ..., max_length=50,
+        description="Главная эмоция (русское слово или 'неизвестно')",
     )
     secondary_emotions: list[str] = Field(
         default_factory=list, max_length=5,
@@ -46,8 +64,8 @@ class PerceptionReport(BaseModel):
     )
 
     theme: str = Field(
-        ..., min_length=1, max_length=100,
-        description="Тема сообщения, slash-формат: 'family/dad-violence'",
+        ..., max_length=100,
+        description="Тема сообщения, slash-формат: 'family/dad-violence' или 'неизвестно'",
     )
 
     hidden_signals: list[str] = Field(
@@ -61,10 +79,10 @@ class PerceptionReport(BaseModel):
     )
 
     what_user_needs: str = Field(
-        ..., min_length=1, max_length=300,
+        ..., max_length=500,
         description=(
             "Что нужно пользователю прямо сейчас "
-            "(выслушать / совет / план / тишина)"
+            "(выслушать / совет / план / тишина / неясно)"
         ),
     )
 
@@ -85,12 +103,40 @@ class PerceptionReport(BaseModel):
     )
 
     inner_monologue: str = Field(
-        ..., min_length=1, max_length=1000,
+        ..., max_length=2000,
         description=(
             "Внутренние мысли Кайроса от первого лица. "
             "Только для админки/отладки. НЕ показывать пользователю."
         ),
     )
+
+    # ========================================================================
+    # Нормализация пустых строк (Сессия 20).
+    # LLM может вернуть пустое поле, если для конкретного ввода нет ясного
+    # значения (например, «ввв»). Вместо ValidationError нормализуем в дефолт.
+    # Также обрезаем длинные строки на случай если LLM вышел за max_length.
+    # См. spec: docs/superpowers/specs/2026-05-06-perception-robustness-design.md
+    # ========================================================================
+
+    @field_validator("dominant_emotion", mode="before")
+    @classmethod
+    def _default_dominant_emotion(cls, v: object) -> str:
+        return _normalize_str(v, "неизвестно", 50)
+
+    @field_validator("theme", mode="before")
+    @classmethod
+    def _default_theme(cls, v: object) -> str:
+        return _normalize_str(v, "неизвестно", 100)
+
+    @field_validator("what_user_needs", mode="before")
+    @classmethod
+    def _default_what_user_needs(cls, v: object) -> str:
+        return _normalize_str(v, "неясно", 500)
+
+    @field_validator("inner_monologue", mode="before")
+    @classmethod
+    def _default_inner_monologue(cls, v: object) -> str:
+        return _normalize_str(v, "(нет мыслей)", 2000)
 
 
 # ============================================================================
