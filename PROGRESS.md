@@ -1590,7 +1590,7 @@ npm run dev
 
 ---
 
-*Последнее обновление: Сессия 19, Май 2026*
+*Последнее обновление: Сессия 20, Май 2026*
 *История правок:*
 - *16.1: чистка корня + структура + блоки 47-68 (агенты, мозг, инфра репо)*
 - *16.2: добавлен Блок 69 (Скрининг ASQ + PSS-4 + ОСР), исправлены ссылки на удалённые файлы*
@@ -1598,5 +1598,6 @@ npm run dev
 - *17.1: 🎉 **СЕРДЦЕ ПРОДУКТА БЬЁТСЯ!** End-to-end работает: чат отвечает через Yandex Cloud (workaround YandexGPT Lite, нужно подключить Qwen). 12 блоков переведены ½ → ✅. Прогресс по «боевому» состоянию: 4% → 19%.*
 - *18.0: реализованы Блок 10 (Dexie offline-кэш), Блок 11 (Feedback UI: thumbs + session card), Блок 12.5 (test_chat.py с моком LLM — 12 интеграционных тестов /api/chat и /api/feedback). 3 блока переведены ⬜ → ½. Прогресс по реальному коду: 44% → 48%.*
 - *19.0: 🎨 **Frontend redesign по черновику Figma Make.** Полная переодевка фронтенда (49 задач, 8 фаз) в worktree `worktree-figma-redesign`: glassmorphism, dark/light тема с auto-detect (21–7), сайдбар с историей сессий, плавающие элементы, мульти-сессии через Dexie (до появления `/api/sessions`), `/settings` страница (тема + 4 локальных wallpaper'а). Новые зависимости (~50 KB gz): `motion`, `lucide-react`, `sonner`, Radix `avatar/dialog/slot`, `cva`, `clsx + tw-merge`. Кризисный модуль переодет — API всех 5 компонентов сохранён 1-в-1 (manual regression тест на 4 уровнях кризиса остаётся за пользователем перед merge). Production build чистый: 5 страниц, type-check без ошибок. Спека и план: `docs/superpowers/specs/2026-05-06-frontend-figma-redesign-design.md` + `docs/superpowers/plans/2026-05-06-frontend-figma-redesign.md`.*
+- *20.0: 🛡️ **Устойчивость PerceptionReport.** Двухслойная защита от нестабильности YandexGPT Lite на пограничных вводах: `field_validator(mode='before')` нормализует пустые `dominant_emotion`/`theme`/`what_user_needs`/`inner_monologue` в дефолты («неизвестно»/«неясно»/«(нет мыслей)»), длинные строки обрезаются. Расширены `max_length`: `inner_monologue` 1000→2000, `what_user_needs` 300→500. ANALYZER_SYSTEM_PROMPT (пункт 7): явная инструкция LLM писать «неизвестно» вместо пустых строк. **БЕЗ retry, БЕЗ rule-based grep** (3 ADR в спеке). 11 unit-тестов. Не трогали `analyzer.py`, `chat.py`, `pipeline.py`, frontend. Дизайн: `docs/superpowers/specs/2026-05-06-perception-robustness-design.md`. План: `docs/superpowers/plans/2026-05-06-perception-robustness.md`.*
 
-*Версия: 2.6*
+*Версия: 2.7*
