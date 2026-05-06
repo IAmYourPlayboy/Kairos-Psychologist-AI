@@ -74,7 +74,7 @@ export default function ChatContainer() {
           ⚠ Магические числа right-[120px]/[130px] подобраны под ширину
           RightDock (260px / 280px) минус собственный размер кнопки и зазор.
           Если RightDock-ширина изменится — синхронизируй здесь. */}
-      <div className="absolute top-3 right-3 md:top-6 md:right-[120px] lg:right-[130px] z-30">
+      <div className="absolute top-3 right-3 md:top-6 md:right-[120px] lg:right-[130px] z-floating-high">
         <SOSButton
           crisisLevel={chat.crisisLevel}
           onClick={() => setCrisisPanelOpen(true)}
@@ -97,12 +97,17 @@ export default function ChatContainer() {
             <div className="w-full flex flex-col mt-auto pt-10">
               {chat.messages.map((msg, idx) => {
                 const isLast = idx === chat.messages.length - 1;
+                // Анимация печати ТОЛЬКО для свежих ответов бота (созданных
+                // в этом mount'е). Иначе при возврате с /settings или /profile
+                // бот будет «печатать» заново уже отправленные сообщения.
+                const animateTyping =
+                  msg.role === "assistant" && isLast && chat.isFreshMessage(msg.id);
                 return (
                   <div key={msg.id}>
                     <MessageBubble
                       role={msg.role}
                       content={msg.content}
-                      animateTyping={msg.role === "assistant" && isLast}
+                      animateTyping={animateTyping}
                     />
                     {msg.role === "assistant" &&
                       msg.crisisLevel &&

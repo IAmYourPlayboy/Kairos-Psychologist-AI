@@ -29,7 +29,7 @@ export function FloatingButtons() {
 
   return (
     <div
-      className="absolute bottom-6 left-0 h-12 z-40 pointer-events-none"
+      className="absolute bottom-6 left-0 h-12 z-floating-high pointer-events-none"
       style={{ width: SIDEBAR_WIDTH }}
     >
       {/* Кнопка настроек */}

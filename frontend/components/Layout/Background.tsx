@@ -7,15 +7,15 @@ import { useThemeTokens } from "@/hooks/useThemeTokens";
 import { useWallpaper } from "@/hooks/useWallpaper";
 
 /**
- * Слой фона: одна большая картинка + темовый overlay.
+ * Слой фона: опциональная картинка + темовый overlay.
  *
- * Картинка статичная, через next/image для оптимизации.
- * Overlay меняется по теме (dark — bg-black/50, light — bg-white/20)
- * через useThemeTokens.
+ * По умолчанию обоев НЕТ — виден базовый цвет body (warm-50 / neutral-950).
+ * Пользователь выбирает обои в /settings; Background рендерит <Image>
+ * только если wallpaper.src !== null.
  *
- * mounted-guard: до рендера на клиенте мы не знаем, какие обои выбрал
- * пользователь (значение в localStorage). Чтобы не показывать default
- * пока загружаем настоящие — рендерим только overlay до маунта.
+ * Overlay (полупрозрачный поверх картинки) включаем тоже только когда
+ * есть картинка — без неё overlay перекрашивал бы базовый цвет body
+ * и делал тёмную тему светлее, что нам не нужно.
  *
  * Никаких видеообоев, никаких внешних CDN. Только локальные JPG.
  */
@@ -23,22 +23,26 @@ export function Background() {
   const { wallpaper, mounted } = useWallpaper();
   const t = useThemeTokens();
 
+  // Если выбран «Без обоев» (wallpaper.src === null) — ничего не рендерим.
+  // Базовый цвет body (warm-50 light / neutral-950 dark) виден напрямую.
+  if (!mounted || wallpaper.src === null) {
+    return null;
+  }
+
   return (
     <div
       aria-hidden="true"
-      className="fixed inset-0 z-0 overflow-hidden pointer-events-none"
+      className="fixed inset-0 z-decorative overflow-hidden pointer-events-none"
     >
-      {mounted && (
-        <Image
-          key={wallpaper.id}
-          src={wallpaper.src}
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover scale-105 transition-transform duration-[20s] ease-linear"
-        />
-      )}
+      <Image
+        key={wallpaper.id}
+        src={wallpaper.src}
+        alt=""
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover scale-105 transition-transform duration-[20s] ease-linear"
+      />
       <div className={cn("absolute inset-0 transition-colors duration-700", t.overlay)} />
     </div>
   );

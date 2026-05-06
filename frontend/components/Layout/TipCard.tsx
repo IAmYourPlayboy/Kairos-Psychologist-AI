@@ -70,6 +70,9 @@ export function TipCard() {
               onClick={handleDismiss}
               aria-label="Закрыть совет дня"
               className={cn(
+                // z-10 локальный (внутри stacking context самой карточки —
+                // motion.div + Card создают свой контекст). НЕ конфликтует
+                // с глобальным z-content (тоже =10) на AppShell wrapper.
                 "absolute right-2 top-2 size-6 rounded-full z-10",
                 t.tipCloseBtn,
               )}

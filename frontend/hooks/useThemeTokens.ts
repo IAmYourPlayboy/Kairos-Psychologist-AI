@@ -36,9 +36,10 @@ export function useThemeTokens() {
       ? "bg-white text-black hover:bg-white/80"
       : "bg-accent-700 text-white hover:bg-accent-800 shadow-md",
 
-    msgUser: isDark
-      ? "bg-white text-black shadow-[0_4px_24px_-4px_rgba(255,255,255,0.2)]"
-      : "bg-accent-500 text-white shadow-md",
+    // Юзер-пузырь — единый accent-500 синий в обеих темах. Раньше в тёмной
+    // теме был белый (bg-white text-black), что создавало диссонанс между
+    // темами. Унификация даёт более согласованный визуальный язык.
+    msgUser: "bg-accent-500 text-white shadow-md",
     msgAi: isDark
       ? "bg-white/10 backdrop-blur-xl border border-white/10 text-white shadow-md"
       : "bg-white/85 backdrop-blur-xl border border-warm-200 text-warm-900 shadow-sm",

@@ -1,6 +1,6 @@
 # AI-ПСИХОЛОГ (KAIROS): ПЛАН РЕАЛИЗАЦИИ
 
-> **Версия**: 3.6 | **Дата**: Май 2026 (Сессия 20)
+> **Версия**: 3.7 | **Дата**: Май 2026 (Сессия 21)
 > **Назначение**: Единственный источник правды о проекте для AI-ассистента и разработчика.
 > **Как пользоваться**: открой Claude Code, прикрепи этот файл и говори «делай блок X из PROGRESS.md».
 
@@ -1008,6 +1008,29 @@ python agents/runner.py --review
 
 Дизайн: `docs/superpowers/specs/2026-05-06-perception-robustness-design.md`
 План: `docs/superpowers/plans/2026-05-06-perception-robustness.md`
+
+**Сессия 21** (Май 2026): 🎨 **CSS Variables Foundation для Кайроса.** Архитектурный фундамент для будущей миграции с Tailwind. Ключевые решения:
+
+- **CSS variables как единственный источник правды.** Палитра (warm/accent/crisis/neutral × 10-11 уровней), z-layers (9 семантических), glass-tokens, typography — всё в `frontend/app/globals.css` как `:root` + `.dark` блоки.
+- **Tailwind config — тонкая обёртка.** Цвета и z через `var(--name)` синтаксис: `rgb(var(--color-warm-50) / <alpha-value>)`. Если завтра захочется мигрировать компонент на CSS Modules / Panda / styled — он будет читать те же CSS-vars, никаких ломающих изменений.
+- **9 семантических z-layers вместо magic numbers.** `z-decorative` (0) / `z-content` (10) / `z-structure` (20) / `z-floating-low` (30) / `z-floating-high` (40) / `z-overlay` (50) / `z-modal-backdrop` (60) / `z-modal` (70) / `z-toast` (80). Группировка в 3 концептуальные группы: Decorative / Structural / Interactive. Между группами щель в 10 единиц.
+- **Разрешены 2 ранее скрытых z-конфликта.** Sidebar и SOSButton были оба на `z-30` (теперь z-structure=20 vs z-floating-high=40). Sidebar context-menu и Dialog были оба на `z-50` (теперь z-overlay=50 vs z-modal=70).
+- **Глобальный focus-ring через `:where(...):focus-visible`** в `globals.css`. Решает проблему «Tab пропадает на 2 нажатия» из manual a11y test Сессии 19. `:where()` имеет нулевую specificity — любой компонент может переопределить.
+- **Sonner Toaster z-index через `[data-sonner-toaster]` правило в globals.css.** Toasts всегда выше Dialog (z-toast=80 > z-modal=70).
+- **`useThemeTokens` API сохранён 1-в-1.** 0 изменений в 100+ местах вызова. API не меняется — внутренние значения теперь читаются из CSS-vars прозрачно.
+- **Backdrop-blur значения** (`--glass-blur-*`) точно совпадают с Tailwind дефолтами (4/8/12/16/24/40px) — 100% визуальная совместимость.
+
+**5 ADR зафиксированы в спеке:**
+- ADR-1: CSS Variables как единственный источник правды
+- ADR-2: 9 семантических z-layers вместо magic numbers
+- ADR-3: useThemeTokens API не меняется
+- ADR-4: SIDEBAR_WIDTH остаётся TS-константой (компромисс между TS-доступом и CSS-доступом)
+- ADR-5: глобальный focus-ring через `:where()` selector
+
+**Не трогали:** `useThemeTokens`, `useTheme`/`useSidebar`/`useSession`, любые компоненты Chat/Crisis/Dossier/Feedback (кроме z-class в ChatContainer SOSButton wrapper), backend, бизнес-логика.
+
+Дизайн: `docs/superpowers/specs/2026-05-06-css-variables-foundation-design.md`
+План: `docs/superpowers/plans/2026-05-06-css-variables-foundation.md`
 
 ---
 

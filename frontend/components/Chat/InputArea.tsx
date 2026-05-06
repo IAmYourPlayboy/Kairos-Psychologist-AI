@@ -42,6 +42,76 @@ export default function InputArea({
     ta.style.height = `${Math.min(ta.scrollHeight, 144)}px`;
   }, [text]);
 
+  // Глобальный auto-focus: если пользователь начинает печатать, а textarea
+  // не в фокусе — фокусируем её и добавляем символ. Поток ввода переходит
+  // прямо в чат, без необходимости кликать по полю.
+  //
+  // Игнорируем:
+  // - модификаторы (Ctrl/Alt/Meta) — пользователь делает Ctrl+T, Ctrl+W итд
+  // - случай когда фокус УЖЕ в input/textarea/select (или contentEditable) —
+  //   иначе мы перетянем фокус из дисклеймера или из другого input'а
+  // - не-печатные клавиши (Tab/Escape/Arrow итд) — `e.key.length === 1`
+  //   фильтрует их (печатные символы — длина 1)
+  // - случай disabled (бот печатает)
+  useEffect(() => {
+    if (disabled) return;
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
+      if (e.key.length !== 1) return;
+
+      const active = document.activeElement as HTMLElement | null;
+      if (active) {
+        const tag = active.tagName.toLowerCase();
+        if (tag === "input" || tag === "textarea" || tag === "select") return;
+        if (active.isContentEditable) return;
+      }
+
+      const ta = textareaRef.current;
+      if (!ta) return;
+      ta.focus();
+      setText((prev) => prev + e.key);
+      e.preventDefault();
+    };
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [disabled]);
+
+  // Глобальный auto-focus: если пользователь начинает печатать, а textarea
+  // не в фокусе — фокусируем её и добавляем символ. Поток ввода переходит
+  // прямо в чат, без необходимости кликать по полю.
+  //
+  // Игнорируем:
+  // - модификаторы (Ctrl/Alt/Meta) — пользователь делает Ctrl+T, Ctrl+W итд
+  // - случай когда фокус УЖЕ в input/textarea/select (или contentEditable) —
+  //   иначе мы перетянем фокус из дисклеймера или из другого input'а
+  // - не-печатные клавиши (Tab/Escape/Arrow итд) — `e.key.length === 1`
+  //   фильтрует их (печатные символы — длина 1)
+  // - случай disabled (бот печатает)
+  useEffect(() => {
+    if (disabled) return;
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
+      if (e.key.length !== 1) return;
+
+      const active = document.activeElement as HTMLElement | null;
+      if (active) {
+        const tag = active.tagName.toLowerCase();
+        if (tag === "input" || tag === "textarea" || tag === "select") return;
+        if (active.isContentEditable) return;
+      }
+
+      const ta = textareaRef.current;
+      if (!ta) return;
+      ta.focus();
+      setText((prev) => prev + e.key);
+      e.preventDefault();
+    };
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [disabled]);
+
   function handleSend() {
     const trimmed = text.trim();
     if (!trimmed || disabled) return;
