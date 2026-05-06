@@ -28,7 +28,7 @@ export function RightDock() {
 
   return (
     <aside
-      className="hidden md:flex absolute right-0 top-0 h-full w-[260px] lg:w-[280px] flex-col p-6 gap-4 items-end z-20 pointer-events-none"
+      className="hidden md:flex absolute right-0 top-0 h-full w-[260px] lg:w-[280px] flex-col p-6 gap-4 items-end z-floating-low pointer-events-none"
       aria-label="Дополнительная панель"
     >
       <div className="flex items-center gap-3 pointer-events-auto">
