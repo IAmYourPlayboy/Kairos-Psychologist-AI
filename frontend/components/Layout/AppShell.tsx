@@ -22,7 +22,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { isDark } = useTheme();
 
   return (
-    <div className="relative flex h-[100dvh] w-full overflow-hidden font-sans">
+    // Базовый цвет ставим ПРЯМО на этой обёртке (а не только через body),
+    // потому что AppShell имеет h-[100dvh] и перекрывает body. Когда обои
+    // не выбраны — Background возвращает null, и пользователь видит
+    // ИМЕННО этот цвет (warm-50 light / neutral-950 dark).
+    <div className="relative flex h-[100dvh] w-full overflow-hidden font-sans bg-warm-50 dark:bg-neutral-950">
       <Toaster theme={isDark ? "dark" : "light"} position="top-center" />
       <Background />
 
