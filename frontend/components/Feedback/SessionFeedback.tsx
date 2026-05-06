@@ -9,6 +9,17 @@ import { cn } from "@/lib/cn";
 import { useThemeTokens } from "@/hooks/useThemeTokens";
 import type { FeedbackEventType } from "@/lib/types";
 
+type FeedbackVariant = "better" | "neutral" | "worse";
+
+const feedbackButtonClass: Record<FeedbackVariant, string> = {
+  better:
+    "bg-accent-100/60 hover:bg-accent-200/80 text-accent-900 dark:bg-accent-500/20 dark:hover:bg-accent-500/30 dark:text-accent-50",
+  neutral:
+    "bg-warm-200/60 hover:bg-warm-300/80 text-warm-900 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white",
+  worse:
+    "bg-crisis-50 hover:bg-crisis-100 text-crisis-900 dark:bg-crisis-500/20 dark:hover:bg-crisis-500/30 dark:text-crisis-50",
+};
+
 interface SessionFeedbackProps {
   onSubmit: (event: FeedbackEventType) => Promise<void> | void;
   onSkip?: () => void;
@@ -76,11 +87,7 @@ export default function SessionFeedback({
               onClick={() => handleClick("felt_better")}
               variant="ghost"
               size="sm"
-              className={cn(
-                "flex-1",
-                "bg-accent-100/60 hover:bg-accent-200/80 text-accent-900",
-                "dark:bg-accent-500/20 dark:hover:bg-accent-500/30 dark:text-accent-50",
-              )}
+              className={cn("flex-1", feedbackButtonClass.better)}
             >
               Стало легче
             </Button>
@@ -89,11 +96,7 @@ export default function SessionFeedback({
               onClick={() => handleClick("no_change")}
               variant="ghost"
               size="sm"
-              className={cn(
-                "flex-1",
-                "bg-warm-200/60 hover:bg-warm-300/80 text-warm-900",
-                "dark:bg-white/10 dark:hover:bg-white/20 dark:text-white",
-              )}
+              className={cn("flex-1", feedbackButtonClass.neutral)}
             >
               Не уверен
             </Button>
@@ -102,11 +105,7 @@ export default function SessionFeedback({
               onClick={() => handleClick("felt_worse")}
               variant="ghost"
               size="sm"
-              className={cn(
-                "flex-1",
-                "bg-crisis-50 hover:bg-crisis-100 text-crisis-900",
-                "dark:bg-crisis-500/20 dark:hover:bg-crisis-500/30 dark:text-crisis-50",
-              )}
+              className={cn("flex-1", feedbackButtonClass.worse)}
             >
               Хуже
             </Button>
