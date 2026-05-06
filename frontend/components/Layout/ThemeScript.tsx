@@ -2,8 +2,12 @@
  * Inline-скрипт, который выставляет класс `.dark` на <html> ДО гидратации React.
  * Это предотвращает «вспышку светлой темы» при первой загрузке.
  *
- * Логика идентична detectInitialTheme() в hooks/useTheme.ts —
- * keep them in sync.
+ * ⚠ SYNC POINT: this inline script duplicates logic from hooks/useTheme.ts.
+ * If you change DARK_HOUR_START / DARK_HOUR_END / THEME_STORAGE_KEY in
+ * lib/theme-config.ts — UPDATE THE INLINE SCRIPT BELOW TO MATCH.
+ *
+ * The inline script must stay literal (no imports) because it runs before
+ * React hydration and must be self-contained in <head>.
  *
  * Подключается в <head> в app/layout.tsx первым ребёнком.
  */

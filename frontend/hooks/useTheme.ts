@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-const STORAGE_KEY = "kairos-theme";
+import {
+  DARK_HOUR_END,
+  DARK_HOUR_START,
+  THEME_STORAGE_KEY,
+} from "@/lib/theme-config";
 
 export type Theme = "dark" | "light";
 
@@ -16,13 +20,13 @@ export type Theme = "dark" | "light";
 function detectInitialTheme(): Theme {
   if (typeof window === "undefined") return "light";
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(THEME_STORAGE_KEY);
     if (saved === "dark" || saved === "light") return saved;
   } catch {
     // localStorage недоступен (приватный режим) — fallback на авто
   }
   const hour = new Date().getHours();
-  return hour >= 21 || hour < 7 ? "dark" : "light";
+  return hour >= DARK_HOUR_START || hour < DARK_HOUR_END ? "dark" : "light";
 }
 
 /**
@@ -43,7 +47,7 @@ export function useTheme() {
     if (!mounted) return;
     document.documentElement.classList.toggle("dark", theme === "dark");
     try {
-      localStorage.setItem(STORAGE_KEY, theme);
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
     } catch {
       // тихо игнорируем
     }
