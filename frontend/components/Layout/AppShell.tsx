@@ -2,7 +2,6 @@
 
 import { Toaster } from "sonner";
 
-import { cn } from "@/lib/cn";
 import { useTheme } from "@/hooks/useTheme";
 
 /**
@@ -11,19 +10,18 @@ import { useTheme } from "@/hooks/useTheme";
  * MVP-фаза: только контейнер с фоном и Toaster.
  * В Phase 2 добавим Background, в Phase 3 — Sidebar и RightDock.
  *
+ * Фон задаётся в globals.css через body/dark body — здесь его нет намеренно,
+ * чтобы избежать вспышки при pre-hydration (anti-flash скрипт уже выставил
+ * .dark на <html> до React).
+ *
  * children — рендерит контент конкретной страницы (chat / profile / settings).
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { isDark, mounted } = useTheme();
+  const { isDark } = useTheme();
 
   return (
     <div
-      className={cn(
-        "relative flex h-[100dvh] w-[100dvw] overflow-hidden font-sans transition-colors duration-700",
-        // До маунта рендерим без класса (anti-flash скрипт уже выставил .dark на <html>).
-        // После маунта класс контролируется хуком (через .dark на <html>).
-        mounted && isDark ? "bg-neutral-950" : "bg-warm-50",
-      )}
+      className="relative flex h-[100dvh] w-full overflow-hidden font-sans"
     >
       <Toaster theme={isDark ? "dark" : "light"} position="top-center" />
 
