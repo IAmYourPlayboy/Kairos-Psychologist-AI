@@ -72,7 +72,7 @@ export default function MessageBubble({
             speed="normal"
           />
         ) : (
-          <span className="whitespace-pre-wrap">{content}</span>
+          <span className="whitespace-pre-wrap break-words">{content}</span>
         )}
         {timestamp && (
           <span className="block text-[10px] font-medium opacity-60 mt-1 text-right">
