@@ -135,6 +135,9 @@
   --bg-elevated:    var(--color-neutral-900);
   --bg-sunken:      var(--color-neutral-800);
   --text-primary:   var(--color-neutral-50);
+  /* Raw RGB triples (not refs) — нужны для alpha-channel synth в дочерних
+   * местах: text-text-secondary/60 → rgb(255 255 255 / 0.6).
+   * НЕ менять на #fff или color-name — сломается alpha-channel pattern. */
   --text-secondary: 255 255 255;
   --text-muted:     255 255 255;
   --text-inverted:  var(--color-neutral-900);
