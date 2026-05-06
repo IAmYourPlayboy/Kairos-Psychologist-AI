@@ -26,7 +26,7 @@ export function Background() {
   return (
     <div
       aria-hidden="true"
-      className="fixed inset-0 z-0 overflow-hidden pointer-events-none"
+      className="fixed inset-0 z-decorative overflow-hidden pointer-events-none"
     >
       {mounted && (
         <Image
