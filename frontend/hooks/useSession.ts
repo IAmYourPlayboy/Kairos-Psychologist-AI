@@ -1,30 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 /**
  * Хук управления session_id и guest_id для гостевого пользователя.
  *
- * Логика:
- * - guest_id создаётся при первом визите и хранится в localStorage навсегда
- *   (до регистрации, потом он привяжется к user_id через /api/sync/migrate).
- * - session_id создаётся при первом сообщении в каждой новой беседе.
- *   После закрытия вкладки и возврата — можно либо продолжить старую сессию,
- *   либо начать новую (это решение принимает useChat / страница).
- *
- * Решение MVP: session_id живёт в sessionStorage (умирает при закрытии вкладки),
- * guest_id — в localStorage (постоянный).
+ * - guest_id хранится в localStorage навсегда.
+ * - session_id хранится в localStorage (поменяли с sessionStorage в Phase 3),
+ *   потому что теперь у нас мульти-сессии: пользователь может иметь несколько
+ *   бесед и переключаться между ними. Активная сессия — та, что в localStorage.
  */
 
 const GUEST_ID_KEY = "kairos.guest_id";
 const SESSION_ID_KEY = "kairos.session_id";
 
 function generateUuid(): string {
-  // crypto.randomUUID() доступен в браузерах с 2022+ (https://caniuse.com/mdn-api_crypto_randomuuid)
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
   }
-  // Fallback (на случай старого браузера)
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
     const v = c === "x" ? r : (r & 0x3) | 0x8;
@@ -34,13 +27,11 @@ function generateUuid(): string {
 
 export function useSession() {
   const [guestId, setGuestId] = useState<string | null>(null);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionId, setSessionIdState] = useState<string | null>(null);
 
-  // Инициализация при первом рендере (на клиенте)
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Гостевой ID — постоянный
     let gid = localStorage.getItem(GUEST_ID_KEY);
     if (!gid) {
       gid = generateUuid();
@@ -48,24 +39,26 @@ export function useSession() {
     }
     setGuestId(gid);
 
-    // Сессия — на одну вкладку
-    let sid = sessionStorage.getItem(SESSION_ID_KEY);
+    let sid = localStorage.getItem(SESSION_ID_KEY);
     if (!sid) {
       sid = generateUuid();
-      sessionStorage.setItem(SESSION_ID_KEY, sid);
+      localStorage.setItem(SESSION_ID_KEY, sid);
     }
-    setSessionId(sid);
+    setSessionIdState(sid);
   }, []);
 
-  /**
-   * Начать новую беседу: создать новый session_id (не трогая guest_id).
-   */
-  function resetSession() {
+  const resetSession = useCallback(() => {
     if (typeof window === "undefined") return;
     const newSid = generateUuid();
-    sessionStorage.setItem(SESSION_ID_KEY, newSid);
-    setSessionId(newSid);
-  }
+    localStorage.setItem(SESSION_ID_KEY, newSid);
+    setSessionIdState(newSid);
+  }, []);
 
-  return { guestId, sessionId, resetSession };
+  const switchToSession = useCallback((id: string) => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(SESSION_ID_KEY, id);
+    setSessionIdState(id);
+  }, []);
+
+  return { guestId, sessionId, resetSession, switchToSession };
 }
