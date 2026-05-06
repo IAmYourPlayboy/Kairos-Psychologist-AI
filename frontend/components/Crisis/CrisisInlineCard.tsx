@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { AlertTriangle, Phone } from "lucide-react";
 
 import { cn } from "@/lib/cn";
+import { spellPhoneForAria, toTelHref } from "@/lib/phoneUtils";
 import { useTheme } from "@/hooks/useTheme";
 import type { CrisisContact, CrisisLevel } from "@/lib/types";
 
@@ -65,8 +66,8 @@ export default function CrisisInlineCard({
         {contacts.slice(0, 3).map((c) => (
           <li key={c.phone}>
             <a
-              href={`tel:${c.phone.replace(/[^\d+]/g, "")}`}
-              aria-label={`Позвонить ${c.name}: ${c.phone.split("").join(" ")}`}
+              href={`tel:${toTelHref(c.phone)}`}
+              aria-label={`Позвонить ${c.name}: ${spellPhoneForAria(c.phone)}`}
               className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/20 transition-colors text-sm"
             >
               <Phone className="size-3.5 opacity-70" />

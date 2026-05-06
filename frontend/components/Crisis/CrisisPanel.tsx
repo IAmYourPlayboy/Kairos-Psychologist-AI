@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/Dialog";
 import { cn } from "@/lib/cn";
+import { spellPhoneForAria, toTelHref } from "@/lib/phoneUtils";
 import { useThemeTokens } from "@/hooks/useThemeTokens";
 import type { CrisisContact } from "@/lib/types";
 
@@ -76,8 +77,8 @@ export default function CrisisPanel({
           {list.map((contact) => (
             <li key={contact.phone}>
               <a
-                href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`}
-                aria-label={`Позвонить ${contact.name}: ${contact.phone.split("").join(" ")}`}
+                href={`tel:${toTelHref(contact.phone)}`}
+                aria-label={`Позвонить ${contact.name}: ${spellPhoneForAria(contact.phone)}`}
                 className={cn(
                   "block rounded-xl p-3 border transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]",
                   t.glassSidebar,
