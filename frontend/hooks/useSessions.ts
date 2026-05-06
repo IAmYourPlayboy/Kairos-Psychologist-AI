@@ -39,6 +39,7 @@ function readTitles(): Record<string, string> {
 }
 
 function writeTitles(map: Record<string, string>) {
+  if (typeof window === "undefined") return;
   try {
     localStorage.setItem(TITLE_STORAGE_KEY, JSON.stringify(map));
   } catch {
