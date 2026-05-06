@@ -81,7 +81,7 @@ export function Sidebar() {
         }}
         transition={{ type: "spring", bounce: 0.15, duration: 0.6 }}
         className={cn(
-          "h-full flex-shrink-0 overflow-hidden relative z-30 transition-colors duration-700",
+          "h-full flex-shrink-0 overflow-hidden relative z-structure transition-colors duration-700",
           t.glassSidebar,
         )}
         style={{ willChange: "width" }}
@@ -162,7 +162,7 @@ export function Sidebar() {
       {contextMenu && (
         <div
           className={cn(
-            "fixed z-50 py-1.5 w-48 rounded-xl shadow-2xl backdrop-blur-xl border",
+            "fixed z-overlay py-1.5 w-48 rounded-xl shadow-2xl backdrop-blur-xl border",
             t.glassPanel,
             t.textMain,
           )}
