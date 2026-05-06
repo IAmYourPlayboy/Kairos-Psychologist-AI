@@ -74,7 +74,7 @@ export default function ChatContainer() {
           ⚠ Магические числа right-[120px]/[130px] подобраны под ширину
           RightDock (260px / 280px) минус собственный размер кнопки и зазор.
           Если RightDock-ширина изменится — синхронизируй здесь. */}
-      <div className="absolute top-3 right-3 md:top-6 md:right-[120px] lg:right-[130px] z-30">
+      <div className="absolute top-3 right-3 md:top-6 md:right-[120px] lg:right-[130px] z-floating-high">
         <SOSButton
           crisisLevel={chat.crisisLevel}
           onClick={() => setCrisisPanelOpen(true)}
