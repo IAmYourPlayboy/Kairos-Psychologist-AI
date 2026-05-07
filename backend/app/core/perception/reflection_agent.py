@@ -26,6 +26,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.llm.base import Message as LLMMessage
+from app.core.llm.extra_body import disable_reasoning
 from app.core.llm.factory import get_provider
 from app.core.perception.analyzer import strip_markdown_fence
 from app.core.perception.dossier import DossierService
@@ -37,6 +38,7 @@ from app.core.perception.reflection_prompt import (
     build_dedupe_user_prompt,
     build_extract_user_prompt,
 )
+from app.data.anonymizer import anonymize, anonymize_perception_json
 from app.data.models import ChatSession, Message
 
 logger = logging.getLogger(__name__)
@@ -53,6 +55,10 @@ class ReflectionResult:
     candidates_skipped: int = 0  # отброшены из-за невалидной папки
     skipped_reason: str | None = None
     last_processed_message_id: str | None = None
+
+    # Анонимизация (Сессия 22, B1):
+    messages_anonymized: int = 0  # сколько сообщений прошли через анонимизатор
+    pii_removed_count: int = 0    # сколько ПДн всего удалено за прогон
 
 
 class ReflectionAgent:
@@ -85,6 +91,12 @@ class ReflectionAgent:
         result.candidates_total = len(candidates)
 
         if not candidates:
+            # Анонимизируем даже если фактов не извлечено — ПДн нужно убрать
+            # независимо от наличия фактов.
+            anon_stats = await self._anonymize_messages(new_messages)
+            result.messages_anonymized = anon_stats["count"]
+            result.pii_removed_count = anon_stats["pii_count"]
+
             # Сдвигаем чекпойнт даже если фактов нет (чтобы не пересматривать)
             await self._dossier.update_checkpoint(
                 user_id=user_id,
@@ -208,7 +220,19 @@ class ReflectionAgent:
                 )
                 result.candidates_skipped += 1
 
-        # === Шаг 7: сдвинуть чекпойнт ===
+        # === Шаг 7: анонимизация обработанных сообщений ===
+        # ФЗ-152 ст.10: данные о психоэмоциональном состоянии — спецкатегория
+        # ПДн. Тексты пишутся в БД оригинальными для качества LLM-ответа в
+        # /api/chat, и обезличиваются здесь — после того как ReflectionAgent
+        # извлёк факты и больше не нужно полное содержимое.
+        # Окно «оригинал в БД» ≤ 15 минут (стандартный интервал Reflection).
+        anon_stats = await self._anonymize_messages(new_messages)
+        result.messages_anonymized = anon_stats["count"]
+        result.pii_removed_count = anon_stats["pii_count"]
+
+        # === Шаг 8: сдвинуть чекпойнт ===
+        # Делаем после анонимизации: если она упала — следующий запуск
+        # переиграет анонимизацию на тех же сообщениях.
         await self._dossier.update_checkpoint(
             user_id=user_id,
             last_processed_message_id=new_messages[-1].id,
@@ -217,13 +241,68 @@ class ReflectionAgent:
         result.last_processed_message_id = new_messages[-1].id
 
         logger.info(
-            "Reflection done: user=%s created=%d updated=%d superseded=%d",
+            "Reflection done: user=%s created=%d updated=%d superseded=%d "
+            "anonymized=%d pii_removed=%d",
             user_id[:8],
             result.facts_created,
             result.facts_updated,
             result.facts_superseded,
+            result.messages_anonymized,
+            result.pii_removed_count,
         )
         return result
+
+    async def _anonymize_messages(
+        self, messages: list[Message],
+    ) -> dict[str, int]:
+        """Прогнать сообщения через анонимизатор и обновить БД.
+
+        Для каждого сообщения:
+        - Заменить `content` на анонимизированный
+        - Записать лог замен в `anonymization_log`
+        - Если есть `perception_json` — анонимизировать поля inner_monologue
+          и what_user_needs (LLM мог их пересказать)
+
+        Идемпотентность: если сообщение уже анонимизировано (есть
+        anonymization_log), второй прогон ничего не сломает — anonymize()
+        пропустит уже-плейсхолдеры (они не подходят под regex ПДн).
+
+        Возвращает stats: {count: сколько обработано, pii_count: сколько ПДн}.
+        """
+        count = 0
+        pii_count = 0
+        for msg in messages:
+            # 1. Анонимизировать content
+            new_content, anon_log = anonymize(msg.content)
+            msg.content = new_content
+            msg.anonymization_log = json.dumps(
+                anon_log.to_dict(), ensure_ascii=False,
+            )
+            pii_count += len(anon_log.replacements)
+
+            # 2. Анонимизировать perception_json (если есть)
+            if msg.perception_json:
+                try:
+                    perception_dict = json.loads(msg.perception_json)
+                    anon_perception, perc_log = anonymize_perception_json(
+                        perception_dict,
+                    )
+                    msg.perception_json = json.dumps(
+                        anon_perception, ensure_ascii=False,
+                    )
+                    pii_count += len(perc_log.replacements)
+                except (json.JSONDecodeError, TypeError):
+                    # Если perception в неожиданном формате — оставляем как есть.
+                    pass
+
+            count += 1
+
+        # Коммит здесь не делаем — call-site (run_for_user) делает
+        # коммит вместе с update_checkpoint, чтобы и анонимизация, и сдвиг
+        # checkpoint случились атомарно.
+        # На самом деле SQLAlchemy сессия открыта на уровень выше и коммит
+        # тоже там. Здесь просто меняем атрибуты ORM-объектов.
+        return {"count": count, "pii_count": pii_count}
 
     # ------------------------------------------------------------------
     # Внутренние методы
@@ -283,6 +362,7 @@ class ReflectionAgent:
         )
 
         provider = get_provider()
+        # Reflection — фоновый JSON-агент, размышления тратят токены без пользы.
         response = await provider.generate(
             [
                 LLMMessage(role="system", content=EXTRACT_SYSTEM_PROMPT),
@@ -290,6 +370,7 @@ class ReflectionAgent:
             ],
             temperature=0.2,
             max_tokens=2000,
+            extra_body=disable_reasoning(),
         )
 
         raw = strip_markdown_fence(response.text)
@@ -344,6 +425,7 @@ class ReflectionAgent:
         )
 
         provider = get_provider()
+        # Dedupe — выбор из вариантов, размышления излишни.
         response = await provider.generate(
             [
                 LLMMessage(role="system", content=DEDUPE_SYSTEM_PROMPT),
@@ -351,6 +433,7 @@ class ReflectionAgent:
             ],
             temperature=0.1,
             max_tokens=300,
+            extra_body=disable_reasoning(),
         )
 
         raw = strip_markdown_fence(response.text)

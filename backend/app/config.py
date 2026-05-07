@@ -50,6 +50,27 @@ class Settings(BaseSettings):
     # 15 минут = пользователь точно ушёл, контекст разговора закончился.
     reflection_delay_seconds: int = 15 * 60
 
+    # === Аутентификация (Блок C1, Сессия 22) ===
+    # JWT_SECRET_KEY используется для подписи access и refresh токенов.
+    # КРИТИЧНО: в production должен быть задан отдельной переменной из .env,
+    # минимум 32 символа случайных данных. Сгенерировать: `openssl rand -hex 32`.
+    # Если не задан — fallback на secret_key (но в проде это будет ошибка).
+    jwt_secret_key: str = ""  # пустой = использовать secret_key
+    jwt_algorithm: str = "HS256"  # HS256 на MVP, RS256 — после когда будет масштаб
+    jwt_access_token_expire_minutes: int = 15
+    jwt_refresh_token_expire_days: int = 30
+
+    # Cookie settings — Secure=True в production (HTTPS).
+    # В dev оставляем False, чтобы работало через http://localhost.
+    cookie_secure: bool = False  # переопределяется в .env.production
+    cookie_domain: str | None = None  # None = использовать domain из запроса
+    cookie_samesite: str = "lax"  # lax: безопасно для большинства, защита от CSRF
+
+    @property
+    def effective_jwt_secret(self) -> str:
+        """Реально используемый JWT-секрет (с fallback на secret_key)."""
+        return self.jwt_secret_key or self.secret_key
+
     # === Логирование ===
     log_level: str = "info"
 

@@ -2,10 +2,13 @@
 
 import { Toaster } from "sonner";
 
+import { PendingDeletionBanner } from "@/components/Auth/PendingDeletionBanner";
 import { Background } from "@/components/Layout/Background";
 import { FloatingButtons } from "@/components/Layout/FloatingButtons";
 import { RightDock } from "@/components/Layout/RightDock";
 import { Sidebar } from "@/components/Layout/Sidebar";
+import { FirstVisitModal } from "@/components/Legal/FirstVisitModal";
+import { FooterDisclaimer } from "@/components/Legal/FooterDisclaimer";
 import { useTheme } from "@/hooks/useTheme";
 
 /**
@@ -34,10 +37,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Sidebar />
         <FloatingButtons />
         <main className="flex-1 flex flex-col h-full w-full relative overflow-hidden">
-          {children}
+          <PendingDeletionBanner />
+          <div className="flex-1 overflow-hidden">{children}</div>
+          <FooterDisclaimer />
         </main>
         <RightDock />
       </div>
+      <FirstVisitModal />
     </div>
   );
 }

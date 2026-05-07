@@ -98,6 +98,14 @@ class User(Base):
         String(20), default="free", nullable=False
     )
 
+    # Soft-delete: пользователь нажал «удалить аккаунт», но мы дадим 7 дней
+    # на отмену. Если NULL — аккаунт активен. Если в будущем — запланировано
+    # удаление. Если в прошлом — Celery-cron выполнит реальное удаление.
+    # См. backend/app/core/auth/account_deletion.py
+    deletion_scheduled_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True,
+    )
+
     # Связи
     chat_sessions: Mapped[list[ChatSession]] = relationship(
         "ChatSession", back_populates="user", cascade="all, delete-orphan"
@@ -236,6 +244,12 @@ class Message(Base):
     # Для role=user — содержит отчёт анализатора об этом сообщении.
     perception_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # JSON-лог анонимизации ПДн (Блок B1, Сессия 22+).
+    # Структура: {had_pii, kinds, count, items: [{kind, len, start, end}]}.
+    # Оригиналы ПДн НЕ хранятся — только метаданные.
+    # Используется для аудита («сколько и каких ПДн встретилось»).
+    anonymization_log: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     # Связи
     session: Mapped[ChatSession] = relationship(
         "ChatSession", back_populates="messages"
@@ -350,6 +364,119 @@ class Subscription(Base):
 # ============================================================================
 # Результаты скрининга (Блок 69)
 # ============================================================================
+
+
+class RefreshToken(Base):
+    """Refresh-токен в БД (для возможности отзыва).
+
+    Зачем хранить токены в БД:
+    - Access JWT (15 мин) подписан и проверяется без БД, его НЕЛЬЗЯ отозвать.
+      Это нормально — короткий срок жизни.
+    - Refresh JWT (30 дней) тоже подписан, но **mы храним его в БД**, чтобы
+      при logout, смене пароля или подозрении на компрометацию — пометить
+      как `revoked`. Без БД украденный refresh работал бы 30 дней.
+
+    Безопасность:
+    - В БД хранится **хеш** токена (SHA-256), не сам токен. Если БД утечёт —
+      токены наружу не выйдут.
+    - При rotation (использовали refresh → выдали новый) старый помечается
+      revoked, новый записывается с `replaced_by`-указателем на старый.
+      Это даёт возможность детектировать replay-атаку: если уже-revoked
+      токен пришёл с попыткой использования — отзываем ВСЮ цепочку
+      (это OWASP-pattern для refresh rotation).
+    """
+
+    __tablename__ = "refresh_tokens"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_new_uuid)
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id"), nullable=False, index=True,
+    )
+
+    # SHA-256 хеш самого токена. Хранить не сам JWT — только его хеш.
+    token_hash: Mapped[str] = mapped_column(
+        String(64), nullable=False, unique=True, index=True,
+    )
+
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, nullable=False,
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True,
+    )
+
+    # Цепочка rotation: если этот токен был заменён на новый при refresh —
+    # сюда пишем id нового. Используется для детекции replay-атак.
+    replaced_by: Mapped[str | None] = mapped_column(
+        String(36), nullable=True,
+    )
+
+    # Аудит: откуда токен был выпущен
+    user_agent: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+
+    def __repr__(self) -> str:
+        status = "revoked" if self.revoked_at else "active"
+        return f"<RefreshToken id={self.id[:8]} user={self.user_id[:8]} {status}>"
+
+
+class UserConsent(Base):
+    """Согласие пользователя на обработку данных (Блок B3, ФЗ-152).
+
+    Согласия хранятся отдельной таблицей (а не флагами в users):
+    - У одного пользователя несколько типов согласий (3 чекбокса)
+    - Каждое согласие имеет временной штамп, версию документа, IP, UA —
+      это важно для аудита при претензиях
+    - Согласие может дать гость (user_id=NULL, guest_id заполнен) — потом
+      при регистрации мигрируем
+    - При обновлении версии документа пользователь снова видит модалку
+      (старое согласие остаётся в истории)
+
+    consent_type:
+        - "terms_of_service"   — пользовательское соглашение
+        - "data_processing"    — обработка данных о состоянии (ст.10 ФЗ-152)
+        - "research_anonymized" — сбор обезличенных данных для исследований
+    """
+
+    __tablename__ = "user_consents"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_new_uuid)
+
+    # Либо user_id (зарегистрированный), либо guest_id (анонимный).
+    # При регистрации гостя — миграция в /api/sync/migrate (Блок 15).
+    user_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("users.id"), nullable=True, index=True,
+    )
+    guest_id: Mapped[str | None] = mapped_column(
+        String(36), nullable=True, index=True,
+    )
+
+    consent_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    document_version: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="1.0",
+    )
+
+    # Аудит-данные на момент согласия
+    accepted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, nullable=False,
+    )
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    user_agent: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    # Если пользователь отозвал согласие — заполняется
+    revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True,
+    )
+
+    def __repr__(self) -> str:
+        ident = self.user_id or self.guest_id or "?"
+        return (
+            f"<UserConsent {self.consent_type} v{self.document_version} "
+            f"by {ident[:8]}>"
+        )
 
 
 class ScreeningResult(Base):

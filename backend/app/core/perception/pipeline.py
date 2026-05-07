@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.llm.base import Message
+from app.core.llm.extra_body import disable_reasoning
 from app.core.llm.factory import get_provider
 from app.core.perception.analyzer import MessageAnalyzer
 from app.core.perception.dossier import DossierService
@@ -30,6 +31,7 @@ from app.core.perception.dossier_summary import facts_to_compact_summary
 from app.core.perception.mood import MoodService
 from app.core.perception.prompt_builder import build_main_prompt
 from app.core.perception.types import MoodState, PerceptionReport
+from app.core.screening import has_active_asq_positive
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +73,7 @@ class PerceptionPipeline:
         session_id: str,
         user_message: str,
         history: list[dict[str, str]],
+        guest_id: str | None = None,
     ) -> PipelineResult:
         """Полный цикл одного сообщения.
 
@@ -79,6 +82,8 @@ class PerceptionPipeline:
             session_id: id сессии.
             user_message: текст текущего сообщения.
             history: предыдущие реплики [{"role", "content"}, ...].
+            guest_id: id анонимного пользователя (используется для проверки
+                ASQ-positive override, если user_id отсутствует).
 
         Returns:
             PipelineResult.
@@ -108,6 +113,29 @@ class PerceptionPipeline:
             report.dominant_emotion, report.theme,
         )
 
+        # === Шаг 2.5: ASQ-override (ADR-1, спецификация Блока D) ===
+        # Если у пользователя/гостя есть активный ASQ-positive результат
+        # за последние 7 дней — принудительно ставим risk_level=immediate,
+        # независимо от того что вернул анализатор. ASQ — валидированный
+        # научный инструмент (NIH 2012), поэтому этот override допустим
+        # как ЕДИНСТВЕННОЕ rule-based исключение в post-Сессия-18 пайплайне.
+        # См. spec: backend/app/core/screening/__init__.py.
+        try:
+            if await has_active_asq_positive(
+                self._db, user_id=user_id, guest_id=guest_id,
+            ):
+                if report.risk_level != "immediate":
+                    logger.warning(
+                        "ASQ-override: session=%s forcing risk_level "
+                        "from '%s' to 'immediate' (positive ASQ within 7 days)",
+                        session_id[:8], report.risk_level,
+                    )
+                    report.risk_level = "immediate"
+        except Exception:  # noqa: BLE001
+            # Если БД-запрос упал — не валим основной поток.
+            # Анализатор остаётся источником истины как обычно.
+            logger.exception("ASQ-override check failed (non-fatal)")
+
         # === Шаг 3: Обновить Mood ===
         mood = await self._mood.update_from_report(session_id, report)
 
@@ -134,13 +162,20 @@ class PerceptionPipeline:
         )
 
         # === Шаг 6: Вызвать основную LLM ===
+        # Reasoning отключаем: ответы Кайроса по дизайну короткие (3 предложения
+        # в кризисе) и идут по строгому промпту. Reasoning тратил бы токены
+        # без улучшения качества, и мог бы спровоцировать «длинные ИИ-абзацы».
+        # При желании включить — передавать extra_body=None извне.
         provider = get_provider()
         messages = [Message(role="system", content=system_prompt)]
         for h in history:
             messages.append(Message(role=h["role"], content=h["content"]))
         messages.append(Message(role="user", content=user_message))
 
-        response = await provider.generate(messages)
+        response = await provider.generate(
+            messages,
+            extra_body=disable_reasoning(),
+        )
 
         # === Шаг 7: Собрать результат ===
         return PipelineResult(

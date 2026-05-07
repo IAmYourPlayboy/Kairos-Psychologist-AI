@@ -23,7 +23,9 @@ from __future__ import annotations
 import logging
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.schemas import (
@@ -32,9 +34,10 @@ from app.api.schemas import (
     CrisisContactDTO,
 )
 from app.config import settings
+from app.core.auth.dependencies import get_optional_user
 from app.core.crisis.contacts import get_crisis_contacts
 from app.data.database import get_db
-from app.data.models import ChatSession, Message as MessageModel
+from app.data.models import ChatSession, Message as MessageModel, User
 
 logger = logging.getLogger(__name__)
 
@@ -57,14 +60,34 @@ _PERCEPTION_FALLBACK = (
 
 @router.post("", response_model=ChatResponse)
 async def chat(
-    request: ChatRequest, db: AsyncSession = Depends(get_db)
+    request: ChatRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User | None, Depends(get_optional_user)] = None,
 ) -> ChatResponse:
     """Обработать сообщение пользователя и вернуть ответ бота.
 
     Этот эндпоинт — сердце продукта. Связывает все компоненты слоя
     восприятия: анализатор, mood, досье, промпт-сборку, LLM и
     логирование в БД.
+
+    Работает и для гостей (user None), и для залогиненных. Единственное
+    исключение: если у залогиненного запланировано удаление аккаунта —
+    блокируем чат с инструкцией восстановить.
     """
+    # === 0. Блокировка для pending-deletion пользователей ===
+    if current_user is not None and current_user.deletion_scheduled_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "account_pending_deletion",
+                "message": (
+                    "Твой аккаунт помечен на удаление. Чтобы продолжить — "
+                    "отмени удаление в настройках профиля."
+                ),
+                "scheduled_at": current_user.deletion_scheduled_at.isoformat(),
+            },
+        )
+
     # === 1. Подготовка / создание сессии ===
     session_id = request.session_id or str(uuid4())
     session = await _get_or_create_session(
@@ -73,7 +96,16 @@ async def chat(
         guest_id=request.guest_id,
     )
 
-    # === 2. Сохранить пользовательское сообщение (без crisis_level пока) ===
+    # === 2. Сохранить пользовательское сообщение (ОРИГИНАЛЬНЫЙ ТЕКСТ) ===
+    # Анонимизация ПДн делается асинхронно ReflectionAgent через 15 минут
+    # после последнего сообщения (Сессия 22, B1 решение):
+    #   - ReflectionAgent видит весь диалог → контекстная анонимизация
+    #     (один и тот же «папа» в разных сообщениях помечается одинаково)
+    #   - LLM-проход поверх regex даёт точнее результат, чем словарный
+    #     метод на одном сообщении
+    #   - /api/chat остаётся быстрым, без лишнего CPU на горячем пути
+    # Юридически (ФЗ-152 ст.10): бекенд в РФ + явное согласие + окно до
+    # анонимизации ≤15 мин. Бэкапы — раз в сутки, окно перекрывает.
     user_message_id = str(uuid4())
     user_msg = MessageModel(
         id=user_message_id,
@@ -198,6 +230,7 @@ async def _process_with_perception_layer(
         pipeline = PerceptionPipeline(db=db, redis_client=get_redis())
         result = await pipeline.process_message(
             user_id=session.user_id,
+            guest_id=session.guest_id,
             session_id=session.id,
             user_message=user_message,
             history=history,

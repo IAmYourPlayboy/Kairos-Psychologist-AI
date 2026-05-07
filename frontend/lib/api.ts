@@ -39,19 +39,65 @@ export class ApiClientError extends Error {
   }
 }
 
+// ============================================================================
+// Auto-refresh: на 401 пытаемся обновить access через /api/auth/refresh.
+//
+// Защита от race: если параллельно идут N запросов и все получили 401,
+// мы не делаем N refresh. Первый кладёт promise в `refreshInFlight`, остальные
+// его await'ят. После завершения promise очищается.
+//
+// Защита от рекурсии: запросы на сам `/api/auth/refresh` помечаются флагом
+// `skipAutoRefresh` и не триггерят повторный refresh даже на 401.
+// ============================================================================
+
+let refreshInFlight: Promise<boolean> | null = null;
+
+async function attemptRefresh(): Promise<boolean> {
+  if (refreshInFlight) return refreshInFlight;
+
+  refreshInFlight = (async () => {
+    try {
+      const response = await fetch("/api/auth/refresh", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      return response.ok;
+    } catch {
+      return false;
+    } finally {
+      // Сбрасываем чуть позже, чтобы параллельные запросы поделили один Promise
+      setTimeout(() => {
+        refreshInFlight = null;
+      }, 0);
+    }
+  })();
+
+  return refreshInFlight;
+}
+
 /**
  * Общий fetch-хелпер с обработкой ошибок и таймаутом.
  */
 async function request<TBody, TResponse>(
   path: string,
   options: {
-    method?: "GET" | "POST";
+    method?: "GET" | "POST" | "DELETE" | "PATCH";
     body?: TBody;
     timeoutMs?: number;
     signal?: AbortSignal;
+    /** Не пытаться auto-refresh на 401 (для самого /api/auth/refresh). */
+    skipAutoRefresh?: boolean;
   } = {},
 ): Promise<TResponse> {
-  const { method = "GET", body, timeoutMs = DEFAULT_TIMEOUT_MS, signal } = options;
+  const {
+    method = "GET",
+    body,
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    signal,
+    skipAutoRefresh = false,
+  } = options;
 
   // Объединяем внешний signal (если есть) с нашим таймаутом
   const controller = new AbortController();
@@ -63,14 +109,28 @@ async function request<TBody, TResponse>(
     else signal.addEventListener("abort", () => controller.abort());
   }
 
-  try {
-    const response = await fetch(path, {
+  const doFetch = async () =>
+    fetch(path, {
       method,
       credentials: "include",
-      headers: body ? { "Content-Type": "application/json" } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
+      headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
       signal: controller.signal,
     });
+
+  try {
+    let response = await doFetch();
+
+    // Auto-refresh на 401
+    if (response.status === 401 && !skipAutoRefresh) {
+      const refreshed = await attemptRefresh();
+      if (refreshed) {
+        // Повторяем оригинальный запрос с новым access cookie
+        response = await doFetch();
+      }
+      // Если не удалось обновить — оставляем оригинальный 401, пусть caller
+      // решает (показать форму логина и т.д.).
+    }
 
     // Парсим ответ
     let data: unknown;
@@ -91,11 +151,12 @@ async function request<TBody, TResponse>(
       if (apiError) {
         throw new ApiClientError(apiError);
       }
-      // Иначе — просто текст ошибки
+      // FastAPI возвращает {"detail": "..."} для HTTPException — учтём
+      const detail = (data as { detail?: string }).detail;
       throw new ApiClientError({
         type: "unknown",
         status: response.status,
-        message: `HTTP ${response.status}`,
+        message: detail ?? `HTTP ${response.status}`,
       });
     }
 
@@ -121,6 +182,9 @@ async function request<TBody, TResponse>(
     clearTimeout(timeoutId);
   }
 }
+
+/** Экспортируем для использования из специфичных модулей (lib/auth.ts). */
+export { request };
 
 // ============================================================================
 // Эндпоинты

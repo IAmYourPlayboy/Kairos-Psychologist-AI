@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { AuthProvider } from "@/components/Auth/AuthProvider";
 import {
   DARK_HOUR_END,
   DARK_HOUR_START,
@@ -349,7 +350,9 @@ export function KairosProviders({ children }: { children: ReactNode }) {
     <ThemeProvider>
       <SidebarProvider>
         <SessionProvider>
-          <WallpaperProvider>{children}</WallpaperProvider>
+          <WallpaperProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </WallpaperProvider>
         </SessionProvider>
       </SidebarProvider>
     </ThemeProvider>

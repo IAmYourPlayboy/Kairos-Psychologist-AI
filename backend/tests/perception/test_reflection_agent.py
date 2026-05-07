@@ -279,3 +279,100 @@ async def test_invalid_folder_skipped(db_with_messages):
     assert result.candidates_total == 2
     assert result.candidates_skipped == 1
     assert result.facts_created == 1
+
+
+async def test_anonymizes_processed_messages(db_with_messages):
+    """После прогона ReflectionAgent сообщения должны быть анонимизированы.
+
+    Проверяет интеграцию Сессии 22, B1: ПДн обезличиваются в БД через
+    15 минут после написания (но до коммита checkpoint, чтобы при сбое
+    переиграть).
+    """
+    user_id = db_with_messages["user_id"]
+    msg_ids = db_with_messages["msg_ids"]
+
+    # Подменяем content одного из сообщений на текст с явными ПДн
+    async with async_session_factory() as db:
+        msg = await db.get(Message, msg_ids[0])
+        msg.content = "звонил Дмитрий, его номер 89991234567, email d@mail.ru"
+        await db.commit()
+
+    # LLM возвращает пустой extract — нам не важна экстракция, важна анонимизация
+    with patch(
+        "app.core.llm.openai_compat.OpenAICompatProvider.generate",
+        new=AsyncMock(return_value=_llm("[]")),
+    ):
+        async with async_session_factory() as db:
+            agent = ReflectionAgent(db=db)
+            result = await agent.run_for_user(user_id)
+
+    # Анонимизация сработала
+    assert result.messages_anonymized == 3  # все 3 сообщения батча
+    assert result.pii_removed_count >= 3  # минимум 3 ПДн в первом сообщении
+
+    # Проверяем что content в БД больше не содержит ПДн
+    async with async_session_factory() as db:
+        msg = await db.get(Message, msg_ids[0])
+        assert "Дмитрий" not in msg.content
+        assert "89991234567" not in msg.content
+        assert "d@mail.ru" not in msg.content
+        # Заменены на плейсхолдеры
+        assert "[NAME]" in msg.content
+        assert "[PHONE]" in msg.content
+        assert "[EMAIL]" in msg.content
+        # Лог записан и содержит метаданные
+        assert msg.anonymization_log is not None
+        log = json.loads(msg.anonymization_log)
+        assert log["had_pii"] is True
+        assert "name" in log["kinds"]
+        assert "phone" in log["kinds"]
+        assert "email" in log["kinds"]
+        # Оригиналы НЕ должны быть в логе (только метаданные)
+        log_str = json.dumps(log, ensure_ascii=False)
+        assert "Дмитрий" not in log_str
+        assert "89991234567" not in log_str
+
+
+async def test_anonymization_idempotent(db_with_messages):
+    """Повторный прогон анонимизатора на уже анонимизированном тексте не ломает его.
+
+    Это важно: если что-то упадёт между анонимизацией и checkpoint commit,
+    следующий запуск должен не сломать уже-плейсхолдеры.
+    """
+    user_id = db_with_messages["user_id"]
+    msg_ids = db_with_messages["msg_ids"]
+
+    # Запускаем анонимизацию первый раз через empty extract
+    with patch(
+        "app.core.llm.openai_compat.OpenAICompatProvider.generate",
+        new=AsyncMock(return_value=_llm("[]")),
+    ):
+        async with async_session_factory() as db:
+            await ReflectionAgent(db=db).run_for_user(user_id)
+
+    # Зафиксируем тексты после первого прогона
+    async with async_session_factory() as db:
+        m0_first = (await db.get(Message, msg_ids[0])).content
+        m1_first = (await db.get(Message, msg_ids[1])).content
+
+    # Сбрасываем checkpoint (имитируя сценарий «commit checkpoint упал»)
+    async with async_session_factory() as db:
+        cp = await db.get(DossierCheckpoint, user_id)
+        if cp:
+            await db.delete(cp)
+            await db.commit()
+
+    # Второй прогон — anonymize() должна быть идемпотентной
+    with patch(
+        "app.core.llm.openai_compat.OpenAICompatProvider.generate",
+        new=AsyncMock(return_value=_llm("[]")),
+    ):
+        async with async_session_factory() as db:
+            await ReflectionAgent(db=db).run_for_user(user_id)
+
+    # Тексты не должны измениться — они уже плейсхолдеры
+    async with async_session_factory() as db:
+        m0_second = (await db.get(Message, msg_ids[0])).content
+        m1_second = (await db.get(Message, msg_ids[1])).content
+        assert m0_second == m0_first
+        assert m1_second == m1_first

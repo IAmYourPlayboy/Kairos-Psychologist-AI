@@ -21,6 +21,7 @@ import re
 from pydantic import ValidationError
 
 from app.core.llm.base import Message
+from app.core.llm.extra_body import disable_reasoning
 from app.core.llm.factory import get_provider
 from app.core.perception.analyzer_prompt import (
     ANALYZER_SYSTEM_PROMPT,
@@ -101,10 +102,14 @@ class MessageAnalyzer:
             Message(role="user", content=user_prompt),
         ]
 
+        # Отключаем reasoning mode: анализатору нужен короткий JSON, размышления
+        # съели бы токены и удвоили latency. Параметр игнорируется провайдерами,
+        # которые не поддерживают reasoning (YandexGPT и т.д.).
         response = await provider.generate(
             messages,
             temperature=self._temperature,
             max_tokens=self._max_tokens,
+            extra_body=disable_reasoning(),
         )
 
         # 1. Снять markdown-обёртку если есть

@@ -1,14 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import CrisisInlineCard from "@/components/Crisis/CrisisInlineCard";
 import CrisisPanel from "@/components/Crisis/CrisisPanel";
 import SOSButton from "@/components/Crisis/SOSButton";
 import MessageFeedback from "@/components/Feedback/MessageFeedback";
 import SessionFeedback from "@/components/Feedback/SessionFeedback";
+import { ASQDialog } from "@/components/Screening/ASQDialog";
+import { ScreeningOfferCard } from "@/components/Screening/ScreeningOfferCard";
 import { cn, RIGHT_DOCK_PADDING } from "@/lib/cn";
+import { markOffered } from "@/lib/screening";
+import type { CrisisLevel } from "@/lib/types";
+import { useAuth } from "@/hooks/useAuth";
 import { useChat } from "@/hooks/useChat";
+import { useShouldOfferASQ } from "@/hooks/useScreeningOffer";
+import { useSession } from "@/hooks/useSession";
 import { useSidebar } from "@/hooks/useSidebar";
 import { useThemeTokens } from "@/hooks/useThemeTokens";
 
@@ -37,9 +44,18 @@ import TypingIndicator from "./TypingIndicator";
 export default function ChatContainer() {
   const t = useThemeTokens();
   const chat = useChat();
+  const { user } = useAuth();
+  const { guestId } = useSession();
   const { isOpen: isSidebarOpen } = useSidebar();
   const [crisisPanelOpen, setCrisisPanelOpen] = useState(false);
   const [sessionEnded, setSessionEnded] = useState(false);
+
+  // Скрининг ASQ — состояние UI
+  const [asqDialogOpen, setAsqDialogOpen] = useState(false);
+  // Локальный dismiss: пользователь нажал «Может позже» или прошёл опросник.
+  // Backend frequency cap (7 дней) — отдельная защита через mark-offered.
+  const [asqDismissed, setAsqDismissed] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Авто-скролл к последнему сообщению
@@ -60,6 +76,47 @@ export default function ChatContainer() {
     .reverse()
     .find((m) => m.role === "assistant");
   const contactsForPanel = lastBotMessage?.crisisContacts ?? [];
+
+  // === Скрининг ASQ ===
+  // identifier — user.id если залогинен, иначе guestId
+  const screeningIdentifier = user?.id ?? guestId;
+  // crisis levels последних bot-сообщений (для решения «надо ли предлагать ASQ»)
+  const recentBotCrisisLevels: CrisisLevel[] = useMemo(
+    () =>
+      chat.messages
+        .filter((m) => m.role === "assistant")
+        .map((m) => m.crisisLevel ?? "normal"),
+    [chat.messages],
+  );
+
+  const shouldOfferASQ = useShouldOfferASQ({
+    identifier: screeningIdentifier,
+    messageCount: chat.messages.length,
+    recentBotCrisisLevels,
+    dismissedInSession: asqDismissed,
+  });
+
+  const handleAsqAccept = async () => {
+    setAsqDialogOpen(true);
+    if (screeningIdentifier) {
+      // Не ждём ответа — UI не блокируется. Если упало — не страшно,
+      // в худшем случае предложим повторно через сессию.
+      void markOffered(screeningIdentifier, "asq").catch(() => {});
+    }
+  };
+
+  const handleAsqDismiss = async () => {
+    setAsqDismissed(true);
+    if (screeningIdentifier) {
+      void markOffered(screeningIdentifier, "asq").catch(() => {});
+    }
+  };
+
+  const handleAsqCompleted = () => {
+    // Опросник пройден — больше не предлагаем в этой сессии
+    setAsqDismissed(true);
+    // Modal сам остаётся открытым с результатом, пока user не закроет
+  };
 
   // Padding нужен в трёх местах (messages, error, input).
   // pr учитывает ширину RightDock (260/280px), pl расширяется когда сайдбар свёрнут.
@@ -128,6 +185,19 @@ export default function ChatContainer() {
               })}
               {chat.isTyping && <TypingIndicator />}
 
+              {/* Inline-карточка приглашения пройти ASQ.
+                  Показывается когда useShouldOfferASQ → true:
+                  - сообщений >= 3
+                  - в последних 5 bot-ответах был elevated/high
+                  - backend разрешает (frequency cap 7 дней)
+                  - пользователь не отклонил/прошёл в этой сессии */}
+              {shouldOfferASQ && !chat.isTyping && (
+                <ScreeningOfferCard
+                  onAccept={handleAsqAccept}
+                  onDismiss={handleAsqDismiss}
+                />
+              )}
+
               {sessionEnded && (
                 <SessionFeedback
                   onSubmit={async (event) => {
@@ -191,6 +261,18 @@ export default function ChatContainer() {
         onClose={() => setCrisisPanelOpen(false)}
         contacts={contactsForPanel}
       />
+
+      {/* Модалка ASQ — открывается когда пользователь принял предложение.
+          Backend ставит interpretation, при positive автоматически активирует
+          override risk_level=immediate в следующих /api/chat (см. ADR-1). */}
+      {chat.sessionId && (
+        <ASQDialog
+          open={asqDialogOpen}
+          sessionId={chat.sessionId}
+          onClose={() => setAsqDialogOpen(false)}
+          onCompleted={handleAsqCompleted}
+        />
+      )}
     </div>
   );
 }

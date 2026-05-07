@@ -24,6 +24,11 @@ dependencies = [
     "redis[hiredis]>=5.2.0",          # Async Redis-клиент для Mood и rate limit
     "celery>=5.4.0",                  # Фоновый брокер для ReflectionAgent
     "celery[redis]>=5.4.0",           # Поддержка Redis как broker/backend
+
+    # === Аутентификация (Блок C, Сессия 22) ===
+    "pwdlib[argon2]>=0.2.1",          # Argon2id для хеширования паролей (PHC winner)
+    "pyjwt>=2.10.0",                  # JWT для access/refresh токенов
+    "email-validator>=2.2.0",         # Валидация email (для Pydantic EmailStr)
 ]
 
 [project.optional-dependencies]

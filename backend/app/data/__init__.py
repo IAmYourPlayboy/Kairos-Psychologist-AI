@@ -13,9 +13,11 @@ from app.data.models import (
     ChatSession,
     FeedbackEvent,
     Message,
+    RefreshToken,
     ScreeningResult,
     Subscription,
     User,
+    UserConsent,
 )
 from app.data.dossier_models import (
     DossierCheckpoint,
@@ -39,6 +41,8 @@ __all__ = [
     "FeedbackEvent",
     "Subscription",
     "ScreeningResult",
+    "UserConsent",
+    "RefreshToken",
     # models — досье (Сессия 18+, слой восприятия)
     "DossierFact",
     "DossierQuote",

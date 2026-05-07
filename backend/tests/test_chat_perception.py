@@ -156,6 +156,73 @@ async def test_chat_perception_pipeline_failure_fallback(client: AsyncClient):
     assert data["crisis_level"] == "normal"
 
 
+async def test_chat_perception_json_persisted_with_all_fields(
+    client: AsyncClient,
+):
+    """B4: проверяем, что в БД пишется ПОЛНЫЙ PerceptionReport, не выборка.
+
+    Это база для калибровки регулятора (PROGRESS.md строки 1367-1449)
+    и для будущей LoRA: если в perception_json не хватит каких-то полей,
+    мы потеряем сигнал.
+    """
+    import json as json_module
+
+    custom_analyzer = json_module.dumps(
+        {
+            "risk_level": "elevated",
+            "dominant_emotion": "тревога",
+            "secondary_emotions": ["усталость", "сомнение"],
+            "theme": "work/burnout",
+            "hidden_signals": ["не спит", "не ест"],
+            "open_questions": ["сколько это длится?"],
+            "what_user_needs": "выслушать без советов",
+            "trust_level": 0.55,
+            "folder_hints": ["work/career", "health/sleep"],
+            "inner_monologue": "Видно эмоциональное выгорание.",
+        },
+        ensure_ascii=False,
+    )
+    mock, _ = _two_step_mock(custom_analyzer, "Слышу тебя.")
+    with patch(
+        "app.core.llm.openai_compat.OpenAICompatProvider.generate",
+        new=mock,
+    ):
+        resp = await client.post(
+            "/api/chat",
+            json={"message": "не сплю уже неделю, всё валится"},
+        )
+
+    assert resp.status_code == 200
+    sid = resp.json()["session_id"]
+
+    # Прочитаем из БД и убедимся, что все поля сохранились
+    from sqlalchemy import select
+    from app.data.database import async_session_factory
+    from app.data.models import Message
+
+    async with async_session_factory() as db:
+        result = await db.execute(
+            select(Message)
+            .where(Message.session_id == sid)
+            .where(Message.role == "user"),
+        )
+        user_msg = result.scalar_one()
+        assert user_msg.perception_json is not None
+
+        report = json_module.loads(user_msg.perception_json)
+        # Все 11 полей должны быть на месте
+        assert report["risk_level"] == "elevated"
+        assert report["dominant_emotion"] == "тревога"
+        assert report["secondary_emotions"] == ["усталость", "сомнение"]
+        assert report["theme"] == "work/burnout"
+        assert report["hidden_signals"] == ["не спит", "не ест"]
+        assert report["open_questions"] == ["сколько это длится?"]
+        assert report["what_user_needs"] == "выслушать без советов"
+        assert report["trust_level"] == 0.55
+        assert report["folder_hints"] == ["work/career", "health/sleep"]
+        assert "выгорание" in report["inner_monologue"]
+
+
 async def test_chat_perception_persists_session(client: AsyncClient):
     """Два сообщения с одним session_id → одна сессия в БД."""
     mock = AsyncMock(side_effect=lambda *a, **k: _llm(_analyzer_json()))
