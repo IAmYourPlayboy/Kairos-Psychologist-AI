@@ -150,7 +150,7 @@
 - [ ] Каждое наблюдение → issue/коммит с фиксом промпта, mood-формулы или dossier-классификации
 - [ ] После каждой группы фиксов — повторный прогон тех же сценариев, чтобы убедиться что фикс не сломал других веток
 
-### 1.3 Промпт-инжиниринг: выжимка из knowledge/ в analyzer и reflection-agent ⚪
+### 1.3 Промпт-инжиниринг: выжимка из knowledge/ в analyzer и reflection-agent ☑️
 
 Сейчас `core/knowledge/six_cs.py`, `who_pfa.py` и т.д. подключены **только** к основному промпту через `prompts/base.py`. Это значит **MessageAnalyzer не использует знания о SIX C's** при оценке risk_level — он опирается на «своё ощущение» LLM. Reflection-agent тоже не знает «что считать триггером по CBT/DBT».
 
@@ -159,11 +159,14 @@
 > **Стратегический контекст**: это **Уровень 1** калибровки регулятора Mood + Analyzer (научная литература как промпт-сигнал). Уровень 2 (публичные датасеты) и Уровень 3 (свой data flywheel) — после публичного запуска. Подробное обоснование — в [`docs/superpowers/specs/2026-05-07-mood-calibration-strategy.md`](docs/superpowers/specs/2026-05-07-mood-calibration-strategy.md).
 
 **Acceptance:**
-- [ ] Расширить `analyzer_prompt.py`: выжимка из `who_pfa.py` «как ВОЗ PFA различает уровни дистресса» — анализатор ставит `risk_level` по признакам из протокола, а не по своему ощущению
-- [ ] Расширить `reflection_prompt.py`: критерии «что считать триггером» из CBT (когнитивные искажения) и DBT (эмоциональные дисрегуляции)
-- [ ] Расширить `prompts/base.py` `inner_monologue` основной LLM: ссылки на конкретные техники из `knowledge/`
-- [ ] Прогнать все сценарии из 1.1 заново → сравнить risk_level и feedback с предыдущим прогоном
-- [ ] Зафиксировать ADR в `docs/superpowers/specs/2026-XX-XX-prompt-engineering-from-knowledge.md`
+- [x] Создан `app/core/knowledge/digests.py` — единый источник 9 выжимок (для analyzer / reflection / основного промпта)
+- [x] Расширен `analyzer_prompt.py`: подключена `WHO_PFA_DISTRESS_LEVELS` — анализатор ставит `risk_level` по поведенческим маркерам, а не по интуиции LLM. Добавлено правило про контекст истории (если в досье активный триггер → повышай минимум на ступень)
+- [x] Расширен `reflection_prompt.py`: подключены `CBT_TRIGGERS` + `DBT_TRIGGERS` — extract-агент отличает устойчивый триггер от разовой реакции
+- [x] Расширен `perception/prompt_builder.py`: добавлена функция `_pick_technique_digest(report)` и блок «Подходящие техники» в `build_main_prompt`. 8 правил выбора (immediate→None, high→валидация, elevated+страх→заземление, утрата→ACT, семья/конфликт→SIX C's, гнев→DBT, тревога→CBT, иначе→None)
+- [x] 13 новых тестов в `tests/perception/test_prompt_builder.py` (8 для `_pick_technique_digest`, 3 для `build_main_prompt`, 1 для analyzer-промпта, 1 для reflection-промпта)
+- [x] Полный pytest: **317 passed** (было 304, +13 новых)
+- [x] ADR зафиксирован в `docs/superpowers/specs/2026-05-07-prompt-engineering-from-knowledge.md` (5 ADR)
+- [ ] Прогнать все сценарии из 1.1 заново → сравнить risk_level и feedback с предыдущим прогоном (после Фазы 1.1)
 
 ### 1.4 Калибровка Mood-формул на ручных наблюдениях ⚪
 

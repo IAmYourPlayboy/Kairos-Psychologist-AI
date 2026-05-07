@@ -5,11 +5,18 @@
 - DEDUPE: семантическое сравнение факта-кандидата с существующими.
 
 Список папок для extract-промпта генерируется из folders.py
-(единый источник правды).
+(единый источник правды). Критерии «как распознать триггер» — из
+``knowledge/digests.py::CBT_TRIGGERS`` и ``DBT_TRIGGERS`` (Сессия 23,
+Фаза 1.3 — выжимка из CBT/DBT в reflection-агента).
 
-Дизайн: §7 в spec.
+Дизайн:
+
+- §7 в исходной spec слоя восприятия (Сессия 18).
+- ``docs/superpowers/specs/2026-05-07-prompt-engineering-from-knowledge.md``
+  (Сессия 23) — почему сюда подмешиваются критерии триггеров.
 """
 
+from app.core.knowledge.digests import CBT_TRIGGERS, DBT_TRIGGERS
 from app.core.perception.folders import render_parent_child_pairs_for_prompt
 
 EXTRACT_SYSTEM_PROMPT = """\
@@ -66,6 +73,10 @@ candidate_folder и candidate_subfolder — это ДВА РАЗНЫХ ПОЛЯ.
   "candidate_subfolder": null
 }
 
+{{CBT_TRIGGERS}}
+
+{{DBT_TRIGGERS}}
+
 Структура каждого факта в выходном JSON-массиве:
 {
   "summary": str (1-2 предложения),
@@ -89,6 +100,18 @@ candidate_folder и candidate_subfolder — это ДВА РАЗНЫХ ПОЛЯ.
 EXTRACT_SYSTEM_PROMPT = EXTRACT_SYSTEM_PROMPT.replace(
     "{{PARENT_CHILD_PAIRS}}",
     render_parent_child_pairs_for_prompt(),
+)
+
+# Подставляем выжимки про триггеры из digests.py.
+# CBT_TRIGGERS — когнитивные искажения как маркер устойчивого триггера.
+# DBT_TRIGGERS — эмоциональная дисрегуляция + отличие от разовой реакции.
+# Цель: extract-агент извлекает не «настроение дня», а устойчивые паттерны.
+EXTRACT_SYSTEM_PROMPT = EXTRACT_SYSTEM_PROMPT.replace(
+    "{{CBT_TRIGGERS}}",
+    CBT_TRIGGERS,
+).replace(
+    "{{DBT_TRIGGERS}}",
+    DBT_TRIGGERS,
 )
 
 

@@ -3,14 +3,21 @@
 Это НЕ промпт основной LLM Кайроса — это отдельный «аналитический» промпт,
 который превращает сообщение в JSON-отчёт.
 
-Дизайн: §5 в spec.
+Дизайн:
+
+- §5 в исходной spec слоя восприятия (Сессия 18).
+- ``docs/superpowers/specs/2026-05-07-prompt-engineering-from-knowledge.md``
+  (Сессия 23) — почему сюда подмешивается выжимка из ВОЗ PFA.
 
 Промпт умышленно требует от анализатора рассуждать (не классифицировать
 по словарю), и явно говорит, что rule-based grep ушёл.
 
 Список папок генерируется из folders.py (единый источник правды).
+Выжимка с описанием уровней дистресса — из knowledge/digests.py
+(``WHO_PFA_DISTRESS_LEVELS``, единый источник для analyzer и reflection).
 """
 
+from app.core.knowledge.digests import WHO_PFA_DISTRESS_LEVELS
 from app.core.perception.folders import render_folder_taxonomy_for_prompt
 
 
@@ -84,11 +91,7 @@ ANALYZER_SYSTEM_PROMPT = """\
    - inner_monologue: даже если нечего сказать — напиши хотя бы одну фразу-наблюдение
      от 1 лица (например, «не понимаю что хочет, надо уточнить»).
 
-Уровни риска:
-- "immediate" — прямые суицидальные сигналы, явная опасность жизни.
-- "high" — выраженная безысходность, активные триггеры (домашнее насилие, угрозы, утрата).
-- "elevated" — заметный дистресс (паника, страх, плач), но без явной опасности.
-- "normal" — обычный разговор, нет кризисных сигналов.
+{{WHO_PFA_DISTRESS_LEVELS}}
 
 Никакого текста вне JSON. Никаких объяснений. Никаких markdown-обёрток.
 Только сырой JSON.
@@ -101,6 +104,14 @@ ANALYZER_SYSTEM_PROMPT = ANALYZER_SYSTEM_PROMPT.replace(
     "\n".join(
         "   " + line for line in render_folder_taxonomy_for_prompt().splitlines()
     ),
+)
+
+# Подставляем выжимку «как ВОЗ PFA различает уровни дистресса» из digests.py.
+# Источник: knowledge/digests.py::WHO_PFA_DISTRESS_LEVELS.
+# Цель: analyzer ставит risk_level по поведенческим маркерам, а не по интуиции LLM.
+ANALYZER_SYSTEM_PROMPT = ANALYZER_SYSTEM_PROMPT.replace(
+    "{{WHO_PFA_DISTRESS_LEVELS}}",
+    WHO_PFA_DISTRESS_LEVELS,
 )
 
 

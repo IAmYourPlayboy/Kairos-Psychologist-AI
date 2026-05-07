@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from app.core.perception.prompt_builder import build_main_prompt
+from app.core.perception.prompt_builder import (
+    _pick_technique_digest,
+    build_main_prompt,
+)
 from app.core.perception.types import MoodState, PerceptionReport
 from app.data.dossier_models import DossierFact
 
@@ -131,3 +134,155 @@ def test_prompt_normal_risk_no_crisis_section():
     # При normal — нет кризисного блока (см. CRISIS_PROMPTS — для normal None)
     # Поэтому проверяем что нет специфичного кризисного маркера
     assert "НЕМЕДЛЕННЫЙ" not in prompt
+
+
+# ============================================================================
+# Тесты _pick_technique_digest и подмешивания техник (Сессия 23, Фаза 1.3).
+# Спека: docs/superpowers/specs/2026-05-07-prompt-engineering-from-knowledge.md
+# ============================================================================
+
+
+def _custom_report(
+    *,
+    risk_level: str = "normal",
+    dominant_emotion: str = "neutral",
+    theme: str = "general",
+) -> PerceptionReport:
+    """Минимальный отчёт под конкретное правило выбора техники."""
+    return PerceptionReport(
+        risk_level=risk_level,
+        dominant_emotion=dominant_emotion,
+        secondary_emotions=[],
+        theme=theme,
+        hidden_signals=[],
+        open_questions=[],
+        what_user_needs="неясно",
+        trust_level=0.5,
+        folder_hints=[],
+        inner_monologue="(нет мыслей)",
+    )
+
+
+def test_pick_technique_immediate_returns_none():
+    """ADR-4: при immediate техники не подмешиваются (CRISIS_PROMPTS уже жёсткий)."""
+    r = _custom_report(risk_level="immediate", dominant_emotion="безысходность")
+    assert _pick_technique_digest(r) is None
+
+
+def test_pick_technique_high_returns_validation():
+    """High → всегда валидация перед предложением контактов."""
+    r = _custom_report(risk_level="high")
+    digest = _pick_technique_digest(r)
+    assert digest is not None
+    assert "ВАЛИДАЦИЯ" in digest
+
+
+def test_pick_technique_elevated_with_fear_returns_grounding():
+    """Elevated + страх/паника → заземление (ВОЗ PFA)."""
+    r = _custom_report(risk_level="elevated", dominant_emotion="страх")
+    digest = _pick_technique_digest(r)
+    assert digest is not None
+    assert "ЗАЗЕМЛЕНИЕ" in digest
+
+
+def test_pick_technique_grief_theme_returns_act():
+    """Тема горя/утраты → ACT."""
+    r = _custom_report(theme="family/grandfather/смерть")
+    digest = _pick_technique_digest(r)
+    assert digest is not None
+    assert "ACT" in digest
+
+
+def test_pick_technique_family_conflict_returns_six_cs():
+    """Тема семьи/конфликта/безысходности → SIX C's (мобилизация)."""
+    r = _custom_report(theme="family/parents/конфликт")
+    digest = _pick_technique_digest(r)
+    assert digest is not None
+    assert "SIX" in digest
+
+
+def test_pick_technique_anger_emotion_returns_dbt():
+    """Эмоция гнев → DBT."""
+    r = _custom_report(dominant_emotion="гнев", theme="work")
+    digest = _pick_technique_digest(r)
+    assert digest is not None
+    assert "DBT" in digest
+
+
+def test_pick_technique_anxiety_theme_returns_cbt():
+    """Тема тревоги без кризиса → CBT (когнитивные искажения)."""
+    r = _custom_report(theme="тревога/exam", dominant_emotion="беспокойство")
+    digest = _pick_technique_digest(r)
+    assert digest is not None
+    assert "CBT" in digest
+
+
+def test_pick_technique_neutral_returns_none():
+    """Если ни одно правило не подошло — None (минимизируем шум в промпте)."""
+    r = _custom_report(theme="general", dominant_emotion="neutral")
+    assert _pick_technique_digest(r) is None
+
+
+def test_build_main_prompt_includes_technique_when_matched():
+    """build_main_prompt подмешивает выжимку техники когда правило сработало."""
+    r = _custom_report(
+        risk_level="elevated",
+        dominant_emotion="страх",
+        theme="паника",
+    )
+    prompt = build_main_prompt(report=r, mood=MoodState.default(), relevant_facts=[])
+    # Маркер из PFA_GROUNDING_DIGEST
+    assert "ЗАЗЕМЛЕНИЕ" in prompt
+
+
+def test_build_main_prompt_no_technique_when_no_rule_matches():
+    """build_main_prompt не добавляет блок техники если ни одно правило не сработало."""
+    r = _custom_report(theme="general", dominant_emotion="neutral")
+    prompt = build_main_prompt(report=r, mood=MoodState.default(), relevant_facts=[])
+    # Ни один маркер из выжимок не должен присутствовать
+    technique_markers = [
+        "ВАЛИДАЦИЯ ПЕРЕД ДЕЙСТВИЕМ",
+        "ЗАЗЕМЛЕНИЕ (ВОЗ PFA",
+        "SIX C's ФАРЧИ",
+        "CBT ПРИ ТРЕВОГЕ",
+        "DBT ПРИ ГНЕВЕ",
+        "ACT ПРИ УТРАТЕ",
+    ]
+    for marker in technique_markers:
+        assert marker not in prompt, f"Не должно быть маркера техники: {marker}"
+
+
+def test_build_main_prompt_immediate_no_technique_added():
+    """ADR-4: при immediate выжимка техники не подмешивается, остаётся только CRISIS_PROMPTS.
+
+    NB: BASE_PROMPT уже упоминает «SIX C's Фарчи» в строке про протоколы, поэтому
+    проверяем не сам этот текст, а заголовок выжимки техники (присутствует ТОЛЬКО
+    в подмешиваемом блоке): «## ПОДХОД: SIX C's».
+    """
+    r = _custom_report(risk_level="immediate", theme="family/parents/конфликт")
+    prompt = build_main_prompt(report=r, mood=MoodState.default(), relevant_facts=[])
+    # Несмотря на тему семья/конфликт — выжимка SIX C's не подмешивается при immediate
+    assert "## ПОДХОД: SIX C's" not in prompt
+    # Но CRISIS_PROMPTS["immediate"] должен быть на месте
+    assert "НЕМЕДЛЕННЫЙ" in prompt
+
+
+def test_analyzer_prompt_includes_distress_levels_digest():
+    """ANALYZER_SYSTEM_PROMPT после Сессии 23 содержит выжимку маркеров уровней."""
+    from app.core.perception.analyzer_prompt import ANALYZER_SYSTEM_PROMPT
+    # Маркер из WHO_PFA_DISTRESS_LEVELS
+    assert "ВОЗ PFA" in ANALYZER_SYSTEM_PROMPT
+    assert "CAPS LOCK" in ANALYZER_SYSTEM_PROMPT
+    # Плейсхолдер должен быть подменён
+    assert "{{WHO_PFA" not in ANALYZER_SYSTEM_PROMPT
+
+
+def test_reflection_extract_prompt_includes_trigger_digests():
+    """EXTRACT_SYSTEM_PROMPT после Сессии 23 содержит критерии триггеров."""
+    from app.core.perception.reflection_prompt import EXTRACT_SYSTEM_PROMPT
+    # Маркеры из CBT_TRIGGERS и DBT_TRIGGERS
+    assert "КОГНИТИВНЫЙ ТРИГГЕР" in EXTRACT_SYSTEM_PROMPT
+    assert "ЭМОЦИОНАЛЬНЫЙ ТРИГГЕР" in EXTRACT_SYSTEM_PROMPT
+    # Плейсхолдеры должны быть подменены
+    assert "{{CBT" not in EXTRACT_SYSTEM_PROMPT
+    assert "{{DBT" not in EXTRACT_SYSTEM_PROMPT
