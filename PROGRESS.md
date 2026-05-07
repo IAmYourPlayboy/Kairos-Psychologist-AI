@@ -120,11 +120,13 @@
 - [ ] Из Python REPL: `from app.core.auth.account_deletion import finalize_pending_deletions; await finalize_pending_deletions(db)`
 - [ ] Проверить: user удалён, dossier_facts/quotes удалены, refresh_tokens удалены, **chat_sessions остались с `user_id=NULL`**, messages остались
 
-### 0.4 Проверить что pytest реально зелёный ½
+### 0.4 Проверить что pytest реально зелёный ☑️
 
 **Acceptance:**
-- [ ] `cd backend && pytest -v` → все 304 теста зелёные
-- [ ] Если красное — фиксить **до** перехода в Фазу 1
+- [x] `cd backend && pytest -v` → все 304 теста зелёные (Сессия 23, прогон 8м54с)
+- [ ] (мелкий долг) `JWT_SECRET` в `.env` сейчас 23 байта, в проде должен быть ≥32 байт (warning `InsecureKeyLengthWarning` в логах). Нужно сгенерировать новый длинный секрет перед Фазой 8 (`python -c "import secrets; print(secrets.token_urlsafe(48))"`)
+- [ ] (мелкий долг) `HTTP_422_UNPROCESSABLE_ENTITY` deprecated → обновить на `HTTP_422_UNPROCESSABLE_CONTENT` в `app/api/screening.py` (warning от FastAPI)
+- [x] Если красное — фиксить **до** перехода в Фазу 1 → красного нет
 
 ---
 

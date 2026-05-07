@@ -41,6 +41,8 @@ ENV/
 # settings.local.json — это локальные permissions конкретного разработчика,
 # не должны попадать в репо. settings.json (если появится) — общий, его не игнорим.
 .claude/settings.local.json
+# .claude/worktrees/ — локальные git worktree копии репо, не должны попадать в репо
+.claude/worktrees/
 
 # ===== Тесты и кэши =====
 .pytest_cache/
