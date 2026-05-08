@@ -4,7 +4,10 @@
 Шаблон — в `.env.example`.
 """
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
+
+PLACEHOLDER_API_KEYS = {"", "change-me", "your-api-key-here", "<your-api-key>"}
 
 
 class Settings(BaseSettings):
@@ -70,6 +73,49 @@ class Settings(BaseSettings):
     def effective_jwt_secret(self) -> str:
         """Реально используемый JWT-секрет (с fallback на secret_key)."""
         return self.jwt_secret_key or self.secret_key
+
+    @field_validator("llm_api_key")
+    @classmethod
+    def _validate_llm_api_key(cls, v: str) -> str:
+        """LLM_API_KEY не должен быть плейсхолдером.
+
+        Без валидного ключа приложение не сможет вызывать LLM —
+        лучше упасть на старте чем тихо отдавать 500 при первом запросе.
+        """
+        if v in PLACEHOLDER_API_KEYS:
+            raise ValueError(
+                f"LLM_API_KEY не настроен (текущее значение: '{v}'). "
+                "Получи ключ Yandex Cloud AI Studio и пропиши его в backend/.env"
+            )
+        return v
+
+    @field_validator("jwt_secret_key")
+    @classmethod
+    def _validate_jwt_secret(cls, v: str) -> str:
+        """JWT_SECRET_KEY должен быть >= 32 символов в проде.
+
+        Исключение: пустая строка означает "использовать secret_key как fallback"
+        (см. effective_jwt_secret). Это допустимо в dev, но не в prod.
+        """
+        if v == "":
+            return v  # fallback на secret_key
+        if len(v) < 32:
+            raise ValueError(
+                f"JWT_SECRET_KEY слишком короткий ({len(v)} < 32 символов). "
+                "Сгенерируй: python -c \"import secrets; print(secrets.token_urlsafe(48))\""
+            )
+        return v
+
+    @field_validator("database_url")
+    @classmethod
+    def _validate_database_url(cls, v: str) -> str:
+        """DATABASE_URL не должен быть пустым."""
+        if not v.strip():
+            raise ValueError(
+                "DATABASE_URL пустой. Пропиши его в backend/.env "
+                "(пример: sqlite+aiosqlite:///./kairos_dev.db)"
+            )
+        return v
 
     # === Логирование ===
     log_level: str = "info"

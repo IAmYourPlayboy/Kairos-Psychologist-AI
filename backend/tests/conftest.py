@@ -20,6 +20,10 @@ import pytest
 os.environ.setdefault(
     "DATABASE_URL", "sqlite+aiosqlite:///./kairos_test_default.db",
 )
+# Тоже до любого импорта app.* — иначе валидатор llm_api_key упадёт
+# на module-level `settings = Settings()` (Сессия 23, Фаза 0.4).
+# Большинство test_*.py уже делают это сами, но дублируем тут как safety net.
+os.environ.setdefault("LLM_API_KEY", "test-api-key-for-pytest")
 
 # Добавляем корень backend в sys.path, чтобы импорты "from app..." работали
 BACKEND_ROOT = Path(__file__).parent.parent
