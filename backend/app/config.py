@@ -120,6 +120,13 @@ class Settings(BaseSettings):
     # === Логирование ===
     log_level: str = "info"
 
+    # === E2E режим (Фаза 1.11, Сессия 24) ===
+    # При E2E_MODE=true factory.get_provider() возвращает MockLLMProvider
+    # с детерминистичными ответами по ключевым словам. Используется только
+    # для Playwright e2e тестов (frontend/tests/e2e/).
+    # КРИТИЧНО: НЕ включать в production — mock не реальный LLM.
+    e2e_mode: bool = False
+
     # === Агенты ===
     pubmed_email: str = "kairos@example.com"
     knowledge_base_path: str = "knowledge_base"

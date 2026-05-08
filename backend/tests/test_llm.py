@@ -170,5 +170,8 @@ def test_get_provider_unknown_raises():
     """get_provider() бросает ValueError для неизвестного провайдера."""
     with patch("app.core.llm.factory.settings") as mock_settings:
         mock_settings.llm_provider = "unknown_provider"
+        # e2e_mode явно False — иначе MagicMock возвращает truthy и
+        # фабрика отдаёт MockLLMProvider вместо ValueError.
+        mock_settings.e2e_mode = False
         with pytest.raises(ValueError, match="Неизвестный LLM-провайдер"):
             get_provider()
