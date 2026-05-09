@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/Dialog";
 import { cn } from "@/lib/cn";
+import { getCrisisContacts } from "@/lib/crisis-contacts";
 import { spellPhoneForAria, toTelHref } from "@/lib/phoneUtils";
 import { useThemeTokens } from "@/hooks/useThemeTokens";
 import type { CrisisContact } from "@/lib/types";
@@ -19,33 +20,6 @@ interface CrisisPanelProps {
   onClose: () => void;
   contacts?: CrisisContact[];
 }
-
-/**
- * Дефолтные универсальные контакты (показываются если бекенд ничего не вернул).
- * НЕ менять без проверки с crisis/contacts.py на бэкенде.
- */
-const DEFAULT_CONTACTS: CrisisContact[] = [
-  {
-    name: "Экстренные службы",
-    phone: "112",
-    description: "Единый номер (работает без SIM-карты)",
-  },
-  {
-    name: "МЧС — психологическая помощь",
-    phone: "8-800-333-44-34",
-    description: "Бесплатно, круглосуточно, анонимно",
-  },
-  {
-    name: "Детский телефон доверия",
-    phone: "8-800-2000-122",
-    description: "Бесплатно, круглосуточно, анонимно (до 18 лет)",
-  },
-  {
-    name: "Линия «0-24»",
-    phone: "8-800-700-84-60",
-    description: "Утрата, насилие, суицид — бесплатно, круглосуточно",
-  },
-];
 
 /**
  * Модальная панель с кризисными контактами.
@@ -61,7 +35,7 @@ export default function CrisisPanel({
   contacts,
 }: CrisisPanelProps) {
   const t = useThemeTokens();
-  const list = contacts && contacts.length > 0 ? contacts : DEFAULT_CONTACTS;
+  const list = contacts && contacts.length > 0 ? contacts : getCrisisContacts();
 
   return (
     <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>

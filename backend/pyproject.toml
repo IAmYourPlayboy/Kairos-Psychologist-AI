@@ -49,3 +49,7 @@ include = ["app*"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = [
+    "live_llm: requires real Yandex API key, runs against actual Qwen 3.6 (skipped by default, run with `pytest -m live_llm`)",
+]
+addopts = "-m 'not live_llm'"

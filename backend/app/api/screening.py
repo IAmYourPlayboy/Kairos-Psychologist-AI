@@ -243,7 +243,7 @@ async def submit_asq(
         answers_int = {int(k): v for k, v in payload.answers.items()}
     except (ValueError, TypeError) as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"Invalid question id (must be int): {e}",
         )
 
@@ -254,7 +254,7 @@ async def submit_asq(
         )
     except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=str(e),
         )
 
@@ -282,7 +282,7 @@ async def submit_pss4(
         answers_int = {int(k): v for k, v in payload.answers.items()}
     except (ValueError, TypeError) as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"Invalid question id (must be int): {e}",
         )
 
@@ -293,7 +293,7 @@ async def submit_pss4(
         )
     except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=str(e),
         )
 
