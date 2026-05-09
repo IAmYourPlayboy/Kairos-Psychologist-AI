@@ -6,11 +6,10 @@ import { test, expect } from "@playwright/test";
  */
 test.describe("Crisis immediate flow", () => {
   test.beforeEach(async ({ context }) => {
+    // Реальный ключ в FirstVisitModal.tsx — kairos.consent_v1_given, значение «1».
+    // Без этого модалка перекрывает чат и click по «Отправить» таймаутит.
     await context.addInitScript(() => {
-      localStorage.setItem("kairos:consent_v1", JSON.stringify({
-        accepted: true,
-        ts: Date.now(),
-      }));
+      localStorage.setItem("kairos.consent_v1_given", "1");
     });
   });
 

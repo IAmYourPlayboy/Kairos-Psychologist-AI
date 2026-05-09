@@ -24,6 +24,11 @@ def get_provider() -> BaseLLMProvider:
         # E2E режим: mock с детерминистичными ответами по ключевым словам.
         # Используется ТОЛЬКО в Playwright тестах. В production не должен
         # активироваться никогда (флаг проброшен через ENV E2E_MODE=true).
+        import logging
+        logging.getLogger(__name__).warning(
+            "🎭 MockLLMProvider активирован (E2E_MODE=true). "
+            "Это НЕ production-режим."
+        )
         from app.core.llm.mock import MockLLMProvider
         _provider = MockLLMProvider()
         return _provider

@@ -10,7 +10,9 @@ test.describe("Chat flow", () => {
     await page.evaluate(() => localStorage.clear());
     await page.goto("/chat");
 
-    const disclaimer = page.getByRole("dialog").filter({ hasText: /не замена/i });
+    // Реальный ключ в FirstVisitModal.tsx — kairos.consent_v1_given (с точкой, суффикс _given).
+    // Диалог имеет DialogTitle «Прежде чем мы начнём» — accessible name надёжнее hasText.
+    const disclaimer = page.getByRole("dialog", { name: /прежде чем мы начнём/i });
     await expect(disclaimer).toBeVisible({ timeout: 5000 });
 
     const checkboxes = page.getByRole("checkbox");
@@ -34,16 +36,14 @@ test.describe("Chat flow", () => {
   });
 
   test("повторный визит → нет дисклеймера → история сохранена", async ({ page, context }) => {
+    // Реальный ключ — kairos.consent_v1_given, значение «1» (см. FirstVisitModal.tsx:102).
     await context.addInitScript(() => {
-      localStorage.setItem("kairos:consent_v1", JSON.stringify({
-        accepted: true,
-        ts: Date.now(),
-      }));
+      localStorage.setItem("kairos.consent_v1_given", "1");
     });
 
     await page.goto("/chat");
 
-    const disclaimer = page.getByRole("dialog").filter({ hasText: /не замена/i });
+    const disclaimer = page.getByRole("dialog", { name: /прежде чем мы начнём/i });
     await expect(disclaimer).not.toBeVisible({ timeout: 2000 });
   });
 });

@@ -7,10 +7,9 @@
 - иначе → normal
 
 Различение «analyzer-запрос vs main-reply» делается по системному
-промпту:
-- если в system есть 'PerceptionReport' / 'JSON' / 'analyzer' /
-  'анализатор' → возвращаем JSON
-- иначе → обычный текст ответа
+промпту: если в system есть уникальные маркеры analyzer-промпта
+(«внутренний аналитик», «никакого текста вне json», «inner_monologue»)
+→ возвращаем JSON. Иначе → обычный текст ответа.
 
 Используется ТОЛЬКО при settings.e2e_mode == True. В production
 никогда не активируется.
@@ -46,8 +45,14 @@ def _detect_risk_level(user_text: str) -> str:
 def _is_analyzer_request(messages: list[Message]) -> bool:
     """Определить, это вызов analyzer'а или main reply.
 
-    Эвристика: в системном промпте analyzer'а есть слова PerceptionReport,
-    JSON, analyzer, анализатор.
+    Эвристика: ищем уникальные маркеры из ANALYZER_SYSTEM_PROMPT
+    (analyzer_prompt.py). В промпте анализатора есть:
+    - «Ты — внутренний аналитик Кайроса» (русское «аналитик», не «анализатор»)
+    - «Никакого текста вне JSON» (уникальная фраза)
+    - «inner_monologue» (имя поля схемы)
+
+    В reflection-промпте таких фраз нет — он говорит про «факты»
+    и extract/dedupe-схему.
     """
     if not messages:
         return False
@@ -55,30 +60,35 @@ def _is_analyzer_request(messages: list[Message]) -> bool:
     if system_msg is None:
         return False
     content = system_msg.content.lower()
-    # Не используем "json" как маркер — он есть и в reflection-промпте,
-    # а у reflection своя схема. analyzer всегда упоминает PerceptionReport
-    # по имени, этого достаточно для различения.
     return any(
         marker in content
-        for marker in ["perceptionreport", "analyzer", "анализатор"]
+        for marker in [
+            "внутренний аналитик",
+            "никакого текста вне json",
+            "inner_monologue",
+        ]
     )
 
 
 def _build_analyzer_response(risk_level: str) -> str:
-    """Построить корректный JSON PerceptionReport для analyzer-запроса."""
+    """Построить корректный JSON PerceptionReport для analyzer-запроса.
+
+    Схема PerceptionReport — в app/core/perception/types.py. Обязательные
+    поля (Field(...)): risk_level, dominant_emotion, theme, what_user_needs,
+    trust_level, inner_monologue. Остальные — optional с default_factory.
+    """
     return json.dumps(
         {
             "risk_level": risk_level,
             "dominant_emotion": "тревога" if risk_level != "normal" else "нейтрально",
+            "secondary_emotions": [],
             "theme": "общая поддержка" if risk_level == "normal" else "кризис",
+            "hidden_signals": [],
+            "open_questions": [],
             "what_user_needs": "выслушать",
-            "inner_monologue": f"E2E mock: detected risk_level={risk_level}",
+            "trust_level": 0.5,
             "folder_hints": [],
-            "ack_needed": risk_level != "normal",
-            "should_ask_followup": False,
-            "energy_level": "средняя",
-            "wants_silence": False,
-            "wants_cognitive_task": risk_level == "elevated",
+            "inner_monologue": f"E2E mock: detected risk_level={risk_level}",
         },
         ensure_ascii=False,
     )

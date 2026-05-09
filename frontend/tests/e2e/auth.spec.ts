@@ -7,6 +7,15 @@ import { test, expect } from "@playwright/test";
  * без чистки БД.
  */
 test.describe("Auth flow", () => {
+  test.beforeEach(async ({ context }) => {
+    // AppShell рендерит FirstVisitModal на каждой странице, включая /auth/*.
+    // Без consent-флага модалка перекрывает форму регистрации.
+    // Реальный ключ — kairos.consent_v1_given (см. FirstVisitModal.tsx:102).
+    await context.addInitScript(() => {
+      localStorage.setItem("kairos.consent_v1_given", "1");
+    });
+  });
+
   test("register → logout → login → logout-everywhere", async ({ page }) => {
     const uniqueEmail = `e2e-test-${Date.now()}@example.com`;
     const password = "test-password-123";
@@ -30,8 +39,12 @@ test.describe("Auth flow", () => {
 
     // Logout через профиль (кнопка «Выйти» — первая, «Выйти со всех устройств» — вторая)
     await page.goto("/profile");
+    // AccountSection рендерит «Загружаем аккаунт…» пока useAuth не дотянет пользователя.
+    // Ждём пока форма прогрузится — по заголовку «Аккаунт».
+    await expect(page.getByRole("heading", { name: "Аккаунт" })).toBeVisible({ timeout: 10000 });
     await page.getByRole("button", { name: /^выйти$/i }).click();
-    await page.waitForURL(/\/(auth|chat|$)/, { timeout: 5000 });
+    // После logout — router.push("/chat"), ждём именно /chat
+    await page.waitForURL(/\/chat/, { timeout: 5000 });
 
     // Login обратно
     await page.goto("/auth/login");
@@ -42,6 +55,7 @@ test.describe("Auth flow", () => {
 
     // Logout everywhere
     await page.goto("/profile");
+    await expect(page.getByRole("heading", { name: "Аккаунт" })).toBeVisible({ timeout: 10000 });
     await page.getByRole("button", { name: /выйти со всех устройств/i }).click();
 
     // Проверяем что cookies очищены (через GET /api/auth/me)
