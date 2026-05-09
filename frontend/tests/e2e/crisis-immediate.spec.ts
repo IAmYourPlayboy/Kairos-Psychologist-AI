@@ -17,15 +17,19 @@ test.describe("Crisis immediate flow", () => {
   test("отправка 'хочу умереть' → CrisisPanel автоматически открыт + 112 виден + Esc закрывает", async ({ page }) => {
     await page.goto("/chat");
 
-    const input = page.getByRole("textbox");
+    const input = page.getByLabel("Сообщение");
     await input.fill("хочу умереть");
-    await input.press("Enter");
+    // Клик по кнопке «Отправить» надёжнее Enter (нет race с autofocus)
+    await page.getByRole("button", { name: "Отправить" }).click();
 
+    // CrisisPanel должен открыться автоматически (по immediate в response)
     const crisisDialog = page.getByRole("dialog").filter({ hasText: /кому позвонить/i });
     await expect(crisisDialog).toBeVisible({ timeout: 10000 });
 
+    // Номер 112 должен быть виден
     await expect(page.getByText("112").first()).toBeVisible();
 
+    // Esc закрывает
     await page.keyboard.press("Escape");
     await expect(crisisDialog).not.toBeVisible({ timeout: 2000 });
   });
@@ -33,14 +37,17 @@ test.describe("Crisis immediate flow", () => {
   test("SOS-кнопка открывает CrisisPanel при normal сообщении", async ({ page }) => {
     await page.goto("/chat");
 
-    const input = page.getByRole("textbox");
+    const input = page.getByLabel("Сообщение");
     await input.fill("привет");
-    await input.press("Enter");
+    await page.getByRole("button", { name: "Отправить" }).click();
 
+    // Ждём ответа
     await page.waitForTimeout(2000);
 
-    await page.getByRole("button", { name: /кризисные контакты|sos/i }).click();
+    // Кликаем SOS (aria-label: «Открыть кризисные контакты»)
+    await page.getByRole("button", { name: /кризисные контакты/i }).click();
 
+    // CrisisPanel открыт даже при normal
     const crisisDialog = page.getByRole("dialog").filter({ hasText: /кому позвонить/i });
     await expect(crisisDialog).toBeVisible();
     await expect(page.getByText("112").first()).toBeVisible();

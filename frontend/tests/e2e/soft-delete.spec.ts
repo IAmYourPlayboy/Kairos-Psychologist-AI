@@ -17,14 +17,21 @@ test.describe("Soft delete flow", () => {
     for (let i = 0; i < count; i++) {
       await checkboxes.nth(i).check();
     }
-    await page.getByRole("button", { name: /зарегистр/i }).click();
+    await page.getByRole("button", { name: /создать аккаунт/i }).click();
     await page.waitForURL(/\/chat/, { timeout: 10000 });
 
+    // Идём в профиль и удаляем аккаунт
     await page.goto("/profile");
-    await page.getByRole("button", { name: /удалить аккаунт/i }).click();
+    // Первая кнопка — «Удалить аккаунт» (открывает confirm Dialog)
+    await page.getByRole("button", { name: /^удалить аккаунт$/i }).click();
 
-    await page.getByRole("button", { name: /подтвердить|да, удалить/i }).click();
+    // Подтверждаем в Dialog — «Да, запросить удаление»
+    await page.getByRole("button", { name: /да, запросить удаление/i }).click();
 
+    // Дать бэку пометить удаление
+    await page.waitForTimeout(500);
+
+    // POST /api/chat должен вернуть 403
     const response = await page.request.post("http://localhost:8001/api/chat", {
       data: { message: "test", session_id: "11111111-1111-1111-1111-111111111111" },
     });
@@ -32,12 +39,16 @@ test.describe("Soft delete flow", () => {
     const body = await response.json();
     expect(body.detail).toContain("account_pending_deletion");
 
+    // Возвращаемся в профиль и отменяем удаление
     await page.goto("/profile");
 
-    await expect(page.getByText(/удаление|удалится/i).first()).toBeVisible();
+    // Должен быть PendingDeletionBanner с текстом про «удаление»
+    await expect(page.getByText(/удаление/i).first()).toBeVisible();
 
-    await page.getByRole("button", { name: /отменить удаление|cancel/i }).first().click();
+    // Кликаем «Отменить удаление»
+    await page.getByRole("button", { name: /отменить удаление/i }).click();
 
+    // POST /api/chat снова работает
     await page.waitForTimeout(1000);
     const response2 = await page.request.post("http://localhost:8001/api/chat", {
       data: { message: "test", session_id: "22222222-2222-2222-2222-222222222222" },

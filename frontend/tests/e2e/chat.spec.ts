@@ -18,14 +18,18 @@ test.describe("Chat flow", () => {
     for (let i = 0; i < count; i++) {
       await checkboxes.nth(i).check();
     }
-    await page.getByRole("button", { name: /продолжить|принять|ок/i }).click();
+    // Реальный текст кнопки: «Согласен(на), продолжить»
+    await page.getByRole("button", { name: /согласен/i }).click();
     await expect(disclaimer).not.toBeVisible();
 
-    const input = page.getByRole("textbox");
+    // Chat textarea имеет aria-label="Сообщение" — через getByLabel точнее
+    const input = page.getByLabel("Сообщение");
     await input.fill("привет");
-    await input.press("Enter");
+    // Отправка — либо Enter, либо клик по кнопке "Отправить" (aria-label)
+    await page.getByRole("button", { name: "Отправить" }).click();
 
-    const botMsg = page.getByText(/Кайрос|привет/i).last();
+    // Ждём ответа от бота (mock возвращает «Привет. Я Кайрос. Что у тебя?»)
+    const botMsg = page.getByText(/Кайрос/i).last();
     await expect(botMsg).toBeVisible({ timeout: 10000 });
   });
 
