@@ -1,10 +1,14 @@
-"""Тесты терапевтических промптов (Блок 3)."""
+"""Тесты терапевтических промптов (Блок 3).
+
+После Сессии 27 кризисный промпт собирается через `build_crisis_prompt(level, age_group)`,
+а не через словарь `CRISIS_PROMPTS`. Тесты адаптированы под новый контракт.
+"""
 
 import pytest
 
 from app.core.prompts.base import FORBIDDEN_PHRASES, PROMPT as BASE_PROMPT
 from app.core.prompts.builder import build_system_prompt
-from app.core.prompts.crisis import CRISIS_PROMPTS
+from app.core.prompts.crisis import LEVELS, build_crisis_prompt
 
 
 # --- Базовый промпт ---
@@ -71,20 +75,27 @@ def test_branch_b_contains_instructor():
 # --- Кризисные промпты ---
 
 
-def test_crisis_immediate_contains_contacts():
+def test_crisis_immediate_contains_universal_contacts():
+    """В immediate всегда присутствуют универсальные контакты: 112 и МЧС.
+
+    Старый билдер (этот путь) вызывает `build_crisis_prompt(level, age_group=None)`,
+    поэтому попадают ВСЕ контакты — включая детский, youth и adult.
+    """
     prompt = build_system_prompt("A", "immediate")
-    assert "8-800-2000-122" in prompt
     assert "112" in prompt
+    assert "8-800-333-44-34" in prompt  # МЧС
 
 
-def test_crisis_high_contains_validation():
+def test_crisis_high_contains_protocol_markers():
+    """В high промпт описывает протокол валидации (без конкретных фраз бота — Сессия 27)."""
     prompt = build_system_prompt("A", "high")
-    assert "Тебе сейчас очень тяжело" in prompt
+    # Протокол HIGH включает валидацию через уточняющий вопрос
+    assert "Валидируй" in prompt or "валидируй" in prompt or "ВЫСОКИЙ" in prompt
 
 
-def test_crisis_elevated_contains_empathy():
+def test_crisis_elevated_contains_empathy_protocol():
     prompt = build_system_prompt("B", "elevated")
-    assert "дистресс" in prompt.lower() or "эмпатию" in prompt.lower()
+    assert "ПОВЫШЕННЫЙ" in prompt or "эмпатию" in prompt.lower()
 
 
 def test_normal_has_no_crisis_section():
@@ -118,10 +129,28 @@ def test_builder_unknown_branch_raises():
         build_system_prompt("C", "normal")
 
 
-def test_all_crisis_levels_exist():
-    assert "elevated" in CRISIS_PROMPTS
-    assert "high" in CRISIS_PROMPTS
-    assert "immediate" in CRISIS_PROMPTS
+# --- Контракт build_crisis_prompt (Сессия 27) ---
+
+
+def test_levels_constant_covers_all():
+    assert set(LEVELS) == {"normal", "elevated", "high", "immediate"}
+
+
+def test_build_crisis_prompt_normal_returns_none():
+    """На normal кризисный блок не нужен → None."""
+    assert build_crisis_prompt("normal") is None
+    assert build_crisis_prompt("normal", age_group="adult") is None
+
+
+def test_build_crisis_prompt_all_crisis_levels_return_text():
+    for level in ("elevated", "high", "immediate"):
+        prompt = build_crisis_prompt(level)
+        assert prompt is not None
+        assert len(prompt) > 0
+
+
+def test_build_crisis_prompt_unknown_level_returns_none():
+    assert build_crisis_prompt("unknown") is None
 
 
 def test_all_prompts_contain_forbidden_block():

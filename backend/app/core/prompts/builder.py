@@ -5,7 +5,7 @@ from typing import Optional, Dict, Any, List, Tuple
 from app.core.prompts.base import PROMPT as BASE_PROMPT
 from app.core.prompts.branch_a import PROMPT as BRANCH_A_PROMPT
 from app.core.prompts.branch_b import PROMPT as BRANCH_B_PROMPT
-from app.core.prompts.crisis import CRISIS_PROMPTS
+from app.core.prompts.crisis import build_crisis_prompt
 
 # Импорт модулей базы знаний
 from app.core.knowledge.who_pfa import suggest_pfa_technique, get_pfa_technique
@@ -54,8 +54,10 @@ def build_system_prompt(
 
     parts = [BASE_PROMPT, _BRANCH_PROMPTS[branch]]
 
-    # Добавить кризисный промпт
-    crisis_prompt = CRISIS_PROMPTS.get(crisis_level)
+    # Добавить кризисный промпт (Сессия 27: без хардкодных фраз,
+    # возрастная маршрутизация телефонов. Старый билдер этого не знает,
+    # поэтому age_group=None — консервативный дефолт: показывать все контакты).
+    crisis_prompt = build_crisis_prompt(crisis_level, age_group=None)
     if crisis_prompt:
         parts.append(crisis_prompt)
 

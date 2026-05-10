@@ -19,11 +19,22 @@
 
 ### Для разработчика
 
+**Сервисы-зависимости** (Redis — нужен для слоя восприятия: Mood + очередь ReflectionAgent):
+
 ```bash
-# Backend (FastAPI)
+# Из корня репозитория (требуется Docker Desktop)
+docker compose -f docker-compose.dev.yml up -d
+docker compose -f docker-compose.dev.yml ps          # должен быть healthy
+```
+
+Без Redis `/api/chat` будет падать в fallback на каждом сообщении («Извини, я сейчас не могу отвечать»). PostgreSQL для dev пока не нужен — используется SQLite из коробки.
+
+**Backend (FastAPI):**
+
+```bash
 cd backend
 python -m venv venv
-venv\Scripts\activate                  # Windows
+venv\Scripts\activate                  # Windows (PowerShell: venv\Scripts\Activate.ps1)
 # source venv/bin/activate              # Mac/Linux
 pip install -e .
 
@@ -34,10 +45,15 @@ uvicorn app.main:app --reload --port 8001
 curl http://localhost:8001/api/health
 ```
 
+**Frontend (Next.js 16):**
+
 ```bash
-# Frontend (Next.js) — пока не инициализирован, см. Блок 7 в PROGRESS.md
 cd frontend
-# npm install, npm run dev — после Блока 7
+npm install
+npm run dev                             # http://localhost:3000
+
+# Если Turbopack падает с "Файл подкачки слишком мал" (Windows + мало virtual memory):
+npx next dev --webpack                  # временно использовать webpack-бандлер
 ```
 
 ---

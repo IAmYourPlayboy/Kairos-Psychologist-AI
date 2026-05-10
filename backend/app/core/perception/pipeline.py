@@ -74,6 +74,7 @@ class PerceptionPipeline:
         user_message: str,
         history: list[dict[str, str]],
         guest_id: str | None = None,
+        age_group: str | None = None,
     ) -> PipelineResult:
         """Полный цикл одного сообщения.
 
@@ -84,6 +85,9 @@ class PerceptionPipeline:
             history: предыдущие реплики [{"role", "content"}, ...].
             guest_id: id анонимного пользователя (используется для проверки
                 ASQ-positive override, если user_id отсутствует).
+            age_group: "child" / "youth" / "adult" / None. Определяет
+                кризисные контакты которые попадут в промпт при risk_level != normal.
+                Приходит из ChatRequest.age_group, по умолчанию "adult" на клиенте.
 
         Returns:
             PipelineResult.
@@ -159,6 +163,7 @@ class PerceptionPipeline:
             report=report,
             mood=mood,
             relevant_facts=relevant_facts,
+            age_group=age_group,
         )
 
         # === Шаг 6: Вызвать основную LLM ===

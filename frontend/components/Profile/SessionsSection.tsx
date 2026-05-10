@@ -126,45 +126,53 @@ export function SessionsSection() {
           const date = new Date(s.last_message_at ?? s.created_at);
           return (
             <li key={s.id}>
-              <button
-                onClick={() => handleOpen(s)}
-                className="w-full text-left flex items-center gap-3 rounded-lg border border-warm-200/60 dark:border-neutral-800/60 hover:bg-warm-100/60 dark:hover:bg-neutral-800/60 px-3 py-2 transition group"
-              >
-                <MessageSquare className="size-4 text-neutral-500 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium truncate">
-                      {s.title}
-                    </span>
-                    {badge.label && (
-                      <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded ${badge.classes}`}
-                      >
-                        {badge.label}
+              {/* Строка-обёртка — div, а не button: внутри нужна кнопка
+                  удаления (Trash2), вложенные <button> невалидны в HTML
+                  и ломают hydration. Hover-эффект держим через `group`. */}
+              <div className="relative flex items-stretch gap-2 rounded-lg border border-warm-200/60 dark:border-neutral-800/60 hover:bg-warm-100/60 dark:hover:bg-neutral-800/60 transition group">
+                {/* Основная кликабельная область — открывает сессию */}
+                <button
+                  type="button"
+                  onClick={() => handleOpen(s)}
+                  className="flex-1 min-w-0 text-left flex items-center gap-3 px-3 py-2 rounded-lg"
+                >
+                  <MessageSquare className="size-4 text-neutral-500 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium truncate">
+                        {s.title}
                       </span>
-                    )}
+                      {badge.label && (
+                        <span
+                          className={`text-[10px] px-1.5 py-0.5 rounded ${badge.classes}`}
+                        >
+                          {badge.label}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-neutral-500 mt-0.5">
+                      {date.toLocaleString("ru-RU", {
+                        day: "numeric",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                      {" · "}
+                      {s.message_count} сообщ.
+                    </div>
                   </div>
-                  <div className="text-xs text-neutral-500 mt-0.5">
-                    {date.toLocaleString("ru-RU", {
-                      day: "numeric",
-                      month: "short",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                    {" · "}
-                    {s.message_count} сообщ.
-                  </div>
-                </div>
+                </button>
+                {/* Кнопка удаления — отдельно от открытия, не вложена */}
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={(e) => handleDelete(s, e)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="shrink-0 mr-1 self-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                   aria-label={`Удалить чат ${s.title}`}
                 >
                   <Trash2 className="size-4 text-crisis-600" />
                 </Button>
-              </button>
+              </div>
             </li>
           );
         })}

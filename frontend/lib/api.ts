@@ -30,7 +30,28 @@ export class ApiClientError extends Error {
   readonly details: unknown;
 
   constructor(payload: ApiError["error"]) {
-    super(payload.message);
+    // Defensive coercion: по контракту error_handler.py::message всегда строка,
+    // но если бэкенд внезапно вернул объект (старая версия, другой формат) —
+    // не показываем пользователю "[object Object]" (JS toString).
+    // Стараемся вытащить осмысленное сообщение, иначе — дефолтная строка.
+    // Принимаем как unknown несмотря на тип `string` в контракте — в runtime
+    // это может быть что угодно (JSON с сервера типизацию не соблюдает).
+    const rawMessage = payload.message as unknown;
+    let safeMessage: string;
+    if (typeof rawMessage === "string") {
+      safeMessage = rawMessage;
+    } else if (rawMessage && typeof rawMessage === "object") {
+      const obj = rawMessage as { message?: unknown; code?: unknown };
+      safeMessage =
+        typeof obj.message === "string"
+          ? obj.message
+          : typeof obj.code === "string"
+          ? obj.code
+          : "Непредвиденная ошибка сервера";
+    } else {
+      safeMessage = "Непредвиденная ошибка сервера";
+    }
+    super(safeMessage);
     this.name = "ApiClientError";
     this.status = payload.status;
     this.type = payload.type;

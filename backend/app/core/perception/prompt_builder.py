@@ -41,7 +41,7 @@ from app.core.knowledge.digests import (
 from app.core.perception.dossier_summary import facts_to_full_dossier_block
 from app.core.perception.types import MoodState, PerceptionReport
 from app.core.prompts.base import PROMPT as BASE_PROMPT
-from app.core.prompts.crisis import CRISIS_PROMPTS
+from app.core.prompts.crisis import build_crisis_prompt
 from app.data.dossier_models import DossierFact
 
 
@@ -139,6 +139,7 @@ def build_main_prompt(
     report: PerceptionReport,
     mood: MoodState,
     relevant_facts: list[DossierFact],
+    age_group: str | None = None,
 ) -> str:
     """Собрать системный промпт для основной LLM.
 
@@ -146,14 +147,18 @@ def build_main_prompt(
         report: результат MessageAnalyzer.
         mood: текущее настроение Кайроса.
         relevant_facts: факты, отобранные по report.folder_hints.
+        age_group: "child" / "youth" / "adult" / None. Определяет какие
+            кризисные контакты попадут в блок данных при risk_level != normal.
+            None = показать все (консервативный дефолт).
 
     Returns:
         Полная строка system prompt.
     """
     parts: list[str] = [BASE_PROMPT]
 
-    # Кризисный блок при не-normal риске
-    crisis_block = CRISIS_PROMPTS.get(report.risk_level)
+    # Кризисный блок при не-normal риске (Сессия 27: переписан под принцип
+    # "без хардкодных фраз" + возрастная маршрутизация телефонов через age_group).
+    crisis_block = build_crisis_prompt(report.risk_level, age_group=age_group)
     if crisis_block:
         parts.append(crisis_block)
 

@@ -1,0 +1,45 @@
+# Docker Compose для локальной разработки.
+#
+# Запускает ТОЛЬКО сервисы-зависимости (Redis, позже PostgreSQL),
+# не сам бекенд и не фронтенд — их удобнее запускать нативно
+# через uvicorn / npm run dev (быстрая перезагрузка, прямой доступ
+# к логам, проще отлаживать).
+#
+# Использование:
+#   docker compose -f docker-compose.dev.yml up -d      # поднять в фоне
+#   docker compose -f docker-compose.dev.yml ps         # статус
+#   docker compose -f docker-compose.dev.yml logs -f    # логи
+#   docker compose -f docker-compose.dev.yml down       # остановить (данные сохраняются в volume)
+#   docker compose -f docker-compose.dev.yml down -v    # остановить и удалить volume (сбросить Mood/очереди)
+#
+# Prod-конфиг — отдельный docker-compose.yml, будет создан в Фазе 8.2
+# (nginx + fastapi + next + postgres + redis + celery worker + celery beat).
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: kairos-redis-dev
+    ports:
+      # Привязка к 127.0.0.1, а не 0.0.0.0 — Redis НЕ должен быть
+      # доступен из сети. Совпадает с REDIS_URL=redis://localhost:6379/0 в .env
+      - "127.0.0.1:6379:6379"
+    volumes:
+      # Named volume чтобы Mood (db=0) и Celery-очереди (db=1, db=2)
+      # переживали перезапуск контейнера. Для полного сброса: down -v
+      - kairos-redis-data:/data
+    # appendonly yes — Redis пишет каждую команду на диск (надёжнее чем RDB-снепшоты).
+    # Для MoodService этого достаточно: потеря последних секунд state при краше — ок.
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    healthcheck:
+      # Docker поймёт что Redis готов только когда PING вернёт PONG,
+      # а не просто «процесс стартовал»
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  kairos-redis-data:
+    name: kairos-redis-data

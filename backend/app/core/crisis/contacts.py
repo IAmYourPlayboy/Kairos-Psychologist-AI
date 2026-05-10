@@ -88,3 +88,35 @@ def get_crisis_contacts(age_group: str | None = None) -> list[CrisisContact]:
         contacts.extend(ADULT_CONTACTS)
 
     return contacts
+
+
+def format_contacts_for_prompt(age_group: str | None = None) -> str:
+    """Отформатировать список кризисных контактов в текст для промпта LLM.
+
+    Каждый контакт — отдельная строка вида "- Имя: ТЕЛЕФОН (описание)".
+    Используется в `prompts/crisis.py` как блок данных, который LLM
+    вставляет в ответ пользователю.
+
+    Почему отдельная функция, а не `str(list_of_contacts)`:
+    - LLM лучше работает с чётким форматом (тире + разделители)
+    - Если формат изменится — меняется в одном месте
+    - Единый источник правды для всех промптов
+
+    Args:
+        age_group: "child" / "youth" / "adult" / None.
+
+    Returns:
+        Многострочный текст готовый к вставке в промпт.
+
+    Example:
+        >>> print(format_contacts_for_prompt("adult"))
+        - Экстренные службы: 112 (Единый номер экстренных служб...)
+        - МЧС — психологическая помощь: 8-800-333-44-34 (...)
+        - Линия «0-24»: 8-800-700-84-60 (Утрата, насилие, суицид...)
+    """
+    contacts = get_crisis_contacts(age_group)
+    lines = [
+        f"- {c.name}: {c.phone} ({c.description})"
+        for c in contacts
+    ]
+    return "\n".join(lines)

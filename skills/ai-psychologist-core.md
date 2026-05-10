@@ -1,6 +1,6 @@
 ---
 name: ai-psychologist-core
-description: "Master context skill for the AI-Психолог project — a Russian-language mental health support system with two modes: PFA-bot (first psychological aid using WHO protocols + SIX C's model by Moshe Farchi) and Digital Twin module (grief support via temporary personality replica with fade-out). Use PROACTIVELY whenever the user discusses any aspect of this project: architecture, therapy logic, NLP analysis, voice interface, crisis routing, legal compliance (FZ-152), deployment, or testing. Also trigger when user mentions ППП-бот, цифровой двойник, SIX C's, Farchi, Aniemore, Dusha dataset, ElevenLabs integration, or crisis routing for Russia."
+description: "Master context skill for the AI-Психолог (Kairos) project — a Russian-language mental health support system with two modes: PFA-mode (first psychological aid using WHO protocols + SIX C's model by Moshe Farchi — the basic chat where Kairos helps the user out of crisis) and Digital Twin module (grief support via temporary personality replica with fade-out). Use PROACTIVELY whenever the user discusses any aspect of this project: architecture, therapy logic, NLP analysis, voice interface, crisis routing, legal compliance (FZ-152), deployment, or testing. Also trigger when user mentions Кайрос, ППП-режим, цифровой двойник, SIX C's, Farchi, Aniemore, Dusha dataset, ElevenLabs integration, or crisis routing for Russia."
 ---
 
 # AI-Психолог: Master Project Context
@@ -14,7 +14,7 @@ description: "Master context skill for the AI-Психолог project — a Rus
 ## Two Modes, One Product
 The system operates as a single product with two modes sharing a common technical core (LLM, emotion recognition, voice interface, crisis routing):
 
-### Mode 1: ППП-Бот (PFA-Bot)
+### Mode 1: ППП-режим (PFA mode) — базовый чат Кайроса
 First psychological aid for crisis situations.
 - **Protocols**: WHO PFA (Look, Listen, Link) + Israeli SIX C's (Farchi, 2012-2013)
 - **Screening**: ASQ (suicide risk) + PSS-4 (stress level) + ОСР (Razuvaeva modification)

@@ -125,6 +125,7 @@ async def chat(
                 {"role": h.role, "content": h.content}
                 for h in request.history
             ],
+            age_group=request.age_group,
         )
     )
     user_msg.perception_json = perception_json
@@ -213,8 +214,14 @@ async def _process_with_perception_layer(
     session: ChatSession,
     user_message: str,
     history: list[dict[str, str]],
+    age_group: str | None = None,
 ) -> tuple[str, dict, str, str | None]:
     """Прогнать сообщение через PerceptionPipeline.
+
+    Args:
+        age_group: возрастная группа пользователя ("child"/"youth"/"adult"/None).
+            Определяет какие кризисные контакты попадут в промпт при
+            risk_level != normal. Берётся из ChatRequest.age_group.
 
     Returns:
         (reply_text, metrics, crisis_level, perception_json)
@@ -234,6 +241,7 @@ async def _process_with_perception_layer(
             session_id=session.id,
             user_message=user_message,
             history=history,
+            age_group=age_group,
         )
         metrics["response_time_ms"] = result.response_time_ms
         metrics["prompt_tokens"] = result.prompt_tokens

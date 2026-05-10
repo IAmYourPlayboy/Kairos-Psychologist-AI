@@ -161,8 +161,12 @@ export function useChat(options: UseChatOptions = {}) {
         void saveLocalMessage(localUser);
       }
 
-      // 2. Готовим историю для отправки на сервер (без только что добавленного user-сообщения)
-      const history: ChatMessageHistory[] = messages.map((m) => ({
+      // 2. Готовим историю для отправки на сервер (без только что добавленного user-сообщения).
+      // Backend валидирует max_length=50 (app/api/schemas.py::ChatRequest.history).
+      // Временный фикс: обрезаем до последних 50 сообщений. Системное решение —
+      // вынести историю на сервер (читать из messages), планируется в Фазе 1.5 (UserState).
+      const HISTORY_LIMIT = 50;
+      const history: ChatMessageHistory[] = messages.slice(-HISTORY_LIMIT).map((m) => ({
         role: m.role,
         content: m.content,
       }));

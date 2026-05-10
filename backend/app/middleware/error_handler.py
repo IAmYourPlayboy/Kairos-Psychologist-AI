@@ -30,14 +30,36 @@ def _request_id(request: Request) -> str | None:
 async def _http_exception_handler(
     request: Request, exc: StarletteHTTPException
 ) -> JSONResponse:
-    """Обработчик HTTP-исключений (raise HTTPException(...))."""
+    """Обработчик HTTP-исключений (raise HTTPException(...)).
+
+    Контракт фронтенда (lib/api.ts::ApiClientError): ``error.message``
+    ВСЕГДА строка. Если эндпоинт передал ``detail=dict`` (нужно отдать
+    доп. поля: ``code``, ``scheduled_at``, etc.) — извлекаем ``message``
+    как строку, а весь dict кладём в ``details``.
+
+    Пример: ``chat.py`` при ``account_pending_deletion`` передаёт
+    ``detail={"code": ..., "message": ..., "scheduled_at": ...}``.
+    Без нормализации JSONResponse сериализовал бы dict в ``message``,
+    и фронтенд получал бы ``"[object Object]"`` (JS toString при
+    интерполяции объекта в строку).
+    """
+    detail = exc.detail
+    if isinstance(detail, dict):
+        # Стандартный формат: {"code": ..., "message": str, ...}
+        message = str(detail.get("message") or detail.get("code") or "error")
+        details: object | None = detail
+    else:
+        message = str(detail)
+        details = None
+
     return JSONResponse(
         status_code=exc.status_code,
         content={
             "error": {
                 "type": "http_exception",
                 "status": exc.status_code,
-                "message": exc.detail,
+                "message": message,
+                "details": details,
                 "request_id": _request_id(request),
             }
         },

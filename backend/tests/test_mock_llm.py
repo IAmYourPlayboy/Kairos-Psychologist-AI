@@ -18,7 +18,9 @@ async def test_analyzer_returns_immediate_for_suicide_text(mock_provider):
     """Если запрос — аналайзер и в user-сообщении 'хочу умереть' → risk_level: immediate."""
     response = await mock_provider.generate(
         messages=[
-            Message(role="system", content="Ты — анализатор. Верни JSON PerceptionReport."),
+            # Маркер «внутренний аналитик» — MockLLMProvider ищет именно эту
+            # фразу из ANALYZER_SYSTEM_PROMPT (обновлено в Сессии 26, коммит da35562).
+            Message(role="system", content="Ты — внутренний аналитик Кайроса. Верни JSON PerceptionReport с inner_monologue."),
             Message(role="user", content="хочу умереть"),
         ]
     )
@@ -31,7 +33,7 @@ async def test_analyzer_returns_elevated_for_fear(mock_provider):
     """User текст 'страшно, не могу заснуть' → elevated."""
     response = await mock_provider.generate(
         messages=[
-            Message(role="system", content="Ты — анализатор."),
+            Message(role="system", content="Ты — внутренний аналитик Кайроса. Никакого текста вне JSON."),
             Message(role="user", content="страшно, не могу заснуть"),
         ]
     )
@@ -44,7 +46,7 @@ async def test_analyzer_returns_high_for_hopeless(mock_provider):
     """User текст 'бессмысленно, нет выхода' → high."""
     response = await mock_provider.generate(
         messages=[
-            Message(role="system", content="Ты — анализатор."),
+            Message(role="system", content="Ты — внутренний аналитик Кайроса. Никакого текста вне JSON."),
             Message(role="user", content="бессмысленно, нет выхода"),
         ]
     )
@@ -57,7 +59,7 @@ async def test_analyzer_returns_normal_for_greeting(mock_provider):
     """User текст 'привет' → normal."""
     response = await mock_provider.generate(
         messages=[
-            Message(role="system", content="Ты — анализатор."),
+            Message(role="system", content="Ты — внутренний аналитик Кайроса. Никакого текста вне JSON."),
             Message(role="user", content="привет"),
         ]
     )
