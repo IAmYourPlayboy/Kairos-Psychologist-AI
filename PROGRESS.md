@@ -245,6 +245,37 @@
 - [x] (мелкий долг) Валидаторы в `app/config.py`: `raise ValueError` при плейсхолдере `LLM_API_KEY`, `JWT_SECRET_KEY` <32 символов, пустом `DATABASE_URL` — Сессия 24, +4 теста в `tests/test_config.py`
 - [x] Если красное — фиксить **до** перехода в Фазу 1 → красного нет
 
+### 0.6 Критический багфикс: непрерывность памяти между сессиями ☑️
+
+**Контекст**: Сессия 28, при попытке провести ручной тест идеи 11B «Свой Кайрос» (backlog.md, пункт 11B) обнаружились **три связанных бага**, из-за которых залогиненный пользователь вообще не получал ощущения непрерывности — Dossier не наполнялся, ReflectionAgent не запускался, бот каждую сессию считал юзера новым.
+
+**Три бага:**
+
+1. **🔴 `_get_or_create_session` не принимал `user_id`** — [`backend/app/api/chat.py:271-290`](backend/app/api/chat.py#L271-L290). При регистрации и первом сообщении в новом чате сессия создавалась с `user_id=None, guest_id=<...>`. В результате `PerceptionPipeline.process_message` на строке 101 проверял `if user_id:` и отключал Dossier/ReflectionAgent для залогиненного пользователя. **Фикс**: `_get_or_create_session` теперь принимает `user_id` и сохраняет его. Плюс бонус: если гостевая сессия существует, а юзер залогинился, следующий `/api/chat` автоматически привязывает сессию (`existing.user_id = user_id`) без необходимости вручную вызывать `/api/sessions/migrate`.
+
+2. **🟡 Celery worker слушал не ту очередь.** В `celery_app.py` задача `run_reflection` маршрутизируется в очередь `reflection` через `task_routes`, но стандартная команда `celery -A app.celery_app worker` слушает только `default`. Задачи улетали в Redis и никем не читались. **Фикс (без кода, только документация)**: в README.md добавлен явный блок «Celery worker (ReflectionAgent)» с правильной командой `celery -A app.celery_app worker --pool=solo -Q reflection,default --loglevel=info`. Проверка: при старте должна появиться строка `.> reflection  exchange=reflection(direct) key=reflection`.
+
+3. **🟡 UnicodeEncodeError в dev-скриптах на Windows.** Любой `python script.py`, печатающий русские буквы, падает на Windows из-за cp1252. **Фикс (документация)**: в README.md добавлена секция «Dev-скрипты с кириллическими данными на Windows» с рецептом `PYTHONIOENCODING=utf-8 venv\Scripts\python.exe` и внутри-скриптовым `sys.stdout = io.TextIOWrapper(..., encoding='utf-8')`.
+
+**Acceptance (подтверждено ручным прогоном в Сессии 28):**
+- [x] Фикс багa №1 в `chat.py` + 2 новых regression-теста в `test_chat_perception.py`:
+  - `test_chat_session_stores_user_id_for_logged_in_user` — залогиненный юзер → `session.user_id != None`
+  - `test_chat_attaches_existing_guest_session_on_login` — гостевая сессия → логин → автопривязка
+- [x] Полный pytest: **395 passed, 5 deselected** (было 389, +6 новых; регрессий нет)
+- [x] Ручной e2e тест непрерывности (залогинен `gysy545@gmail.com`):
+  - Сессия A: «Меня зовут Артём. У меня умерла мама в прошлом году. Работаю программистом, иногда выгораю.»
+  - Celery worker с `-Q reflection,default` отработал → Dossier пополнен 4 фактами (`identity/None`, `losses/death`, `work_school/current`, `health/mental`)
+  - Сессия B (через «+»): «Привет. Сегодня паршивый день.» → «просто поговорить. может знаешь что-то обо мне?»
+  - **Ответ бота:** *«Ты Артём... Мама ушла в прошлом году. Выгораешь... Я помню. Ты здесь, и я тебя слышу...»* ✅
+- [x] README.md — добавлены блоки про Celery worker и Windows UTF-8 в dev-скриптах
+
+**Вывод для 11B**: инфраструктура непрерывности (`folder_hints` от analyzer → `get_facts_by_folders` → `facts_to_full_dossier_block` → основной промпт) **работает end-to-end**. Задача «Свой Кайрос» в узкой формулировке (пункты 1, 2, 7 из обсуждения Сессии 28) **уже работает** с точки зрения памяти о пользователе. Дальнейшая работа по 11B (полировка живой речи, случай когда бот ссылается на факты естественно без перечисления списком) — микро-задача в Фазе 1, не архитектурная переделка.
+
+**Файлы Сессии 28:**
+- [`backend/app/api/chat.py`](backend/app/api/chat.py) — `_get_or_create_session` принимает `user_id`
+- [`backend/tests/test_chat_perception.py`](backend/tests/test_chat_perception.py) — 2 новых regression-теста
+- [`README.md`](README.md) — блоки про Celery worker и dev-скрипты с кириллицей
+
 ---
 
 ## ФАЗА 1 — Локальная шлифовка Кайроса на себе (4-6 недель)

@@ -248,3 +248,130 @@ async def test_chat_perception_persists_session(client: AsyncClient):
     assert r1.status_code == 200
     assert r2.status_code == 200
     assert r2.json()["session_id"] == sid
+
+
+# ============================================================================
+# Регрессия: сессия залогиненного пользователя должна хранить user_id
+# (баг Сессии 27: _get_or_create_session не принимал user_id → Dossier
+# не работал для залогиненных)
+# ============================================================================
+
+
+async def test_chat_session_stores_user_id_for_logged_in_user(
+    client: AsyncClient,
+):
+    """Залогиненный пользователь → новая сессия пишется с user_id в БД.
+
+    Без этого фикса сессия создавалась с user_id=None, pipeline считал
+    пользователя гостем, Dossier/ReflectionAgent не включались.
+    """
+    # Регистрация кладёт cookies в client → следующий /api/chat уже залогинен
+    reg = await client.post(
+        "/api/auth/register",
+        json={
+            "email": "continuity@example.com",
+            "password": "test-password-123",
+            "consents": [
+                {"consent_type": "terms_of_service", "granted": True},
+                {"consent_type": "data_processing", "granted": True},
+                {"consent_type": "research_anonymized", "granted": True},
+            ],
+        },
+    )
+    assert reg.status_code == 200, reg.text
+    user_id = reg.json()["user"]["id"]
+
+    mock, _ = _two_step_mock(
+        _analyzer_json("normal"),
+        "ок",
+    )
+    with patch(
+        "app.core.llm.openai_compat.OpenAICompatProvider.generate",
+        new=mock,
+    ):
+        resp = await client.post("/api/chat", json={"message": "привет"})
+
+    assert resp.status_code == 200
+    sid = resp.json()["session_id"]
+
+    from sqlalchemy import select
+    from app.data.database import async_session_factory
+    from app.data.models import ChatSession as CS
+
+    async with async_session_factory() as db:
+        row = (await db.execute(select(CS).where(CS.id == sid))).scalar_one()
+        assert row.user_id == user_id, (
+            f"сессия залогиненного пользователя должна иметь user_id={user_id}, "
+            f"а не {row.user_id!r}"
+        )
+
+
+async def test_chat_attaches_existing_guest_session_on_login(
+    client: AsyncClient,
+):
+    """Гостевая сессия → юзер логинится → следующий /api/chat привязывает
+    её к user_id, не создавая новую.
+
+    Это покрывает случай, когда пользователь начал разговор гостем, затем
+    зарегистрировался, и отправил ещё одно сообщение в ту же сессию до того,
+    как фронт вызвал /api/sessions/migrate.
+    """
+    # Шаг 1: гостевое сообщение (без cookies)
+    mock1, _ = _two_step_mock(_analyzer_json("normal"), "ок")
+    with patch(
+        "app.core.llm.openai_compat.OpenAICompatProvider.generate",
+        new=mock1,
+    ):
+        r = await client.post(
+            "/api/chat",
+            json={
+                "message": "привет",
+                "guest_id": "11111111-1111-1111-1111-111111111111",
+            },
+        )
+    assert r.status_code == 200
+    sid = r.json()["session_id"]
+
+    # Убедимся, что сейчас сессия — гостевая (user_id=None)
+    from sqlalchemy import select
+    from app.data.database import async_session_factory
+    from app.data.models import ChatSession as CS
+
+    async with async_session_factory() as db:
+        row = (await db.execute(select(CS).where(CS.id == sid))).scalar_one()
+        assert row.user_id is None
+
+    # Шаг 2: регистрация (ставит cookies в client)
+    reg = await client.post(
+        "/api/auth/register",
+        json={
+            "email": "attach@example.com",
+            "password": "test-password-123",
+            "consents": [
+                {"consent_type": "terms_of_service", "granted": True},
+                {"consent_type": "data_processing", "granted": True},
+                {"consent_type": "research_anonymized", "granted": True},
+            ],
+        },
+    )
+    assert reg.status_code == 200, reg.text
+    user_id = reg.json()["user"]["id"]
+
+    # Шаг 3: следующий /api/chat с той же session_id — должен привязать
+    mock2, _ = _two_step_mock(_analyzer_json("normal"), "ок2")
+    with patch(
+        "app.core.llm.openai_compat.OpenAICompatProvider.generate",
+        new=mock2,
+    ):
+        r2 = await client.post(
+            "/api/chat",
+            json={"message": "ещё", "session_id": sid},
+        )
+    assert r2.status_code == 200
+
+    async with async_session_factory() as db:
+        row = (await db.execute(select(CS).where(CS.id == sid))).scalar_one()
+        assert row.user_id == user_id, (
+            "существующая гостевая сессия должна быть привязана к "
+            f"залогиненному юзеру, а не остаться с user_id={row.user_id!r}"
+        )

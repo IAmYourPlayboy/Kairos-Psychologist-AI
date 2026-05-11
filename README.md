@@ -56,6 +56,47 @@ npm run dev                             # http://localhost:3000
 npx next dev --webpack                  # временно использовать webpack-бандлер
 ```
 
+**Celery worker (ReflectionAgent):**
+
+ReflectionAgent извлекает факты в Dossier через 15 минут (или `REFLECTION_DELAY_SECONDS` из `.env`) после последнего сообщения. Без запущенного worker'а досье не наполняется — бот не будет помнить пользователя между сессиями.
+
+**Важно:** worker должен слушать очередь `reflection` (не только `default`). В `celery_app.py` задача `run_reflection` маршрутизируется в очередь `reflection` через `task_routes`.
+
+```bash
+cd backend
+venv\Scripts\activate
+
+# Правильная команда (Windows + Linux):
+celery -A app.celery_app worker --loglevel=info --pool=solo -Q reflection,default
+
+# Флаги:
+#   --pool=solo        обязателен на Windows (иначе Celery падает на форке процессов)
+#   -Q reflection,default   слушать обе очереди; без -Q reflection задачи зависнут в Redis
+```
+
+При старте должна появиться строка:
+```
+[tasks]
+  . app.core.perception.reflection_tasks.run_reflection
+...
+.> reflection         exchange=reflection(direct) key=reflection
+```
+
+Если в выводе **только** `default` — флаг `-Q` был забыт, задачи не выполнятся.
+
+**Dev-скрипты с кириллическими данными на Windows:**
+
+При запуске Python-скриптов, которые печатают русский текст (например, просмотр Dossier), нужен явный UTF-8 вывод — иначе `UnicodeEncodeError: 'charmap' codec can't encode`:
+
+```bash
+# Windows (PowerShell/cmd):
+PYTHONIOENCODING=utf-8 venv\Scripts\python.exe script.py
+# или внутри скрипта:
+#   sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+```
+
+На Linux/Mac это не нужно — терминал по умолчанию UTF-8.
+
 ---
 
 ## 📁 Структура проекта

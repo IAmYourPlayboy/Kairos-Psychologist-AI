@@ -89,10 +89,14 @@ async def chat(
         )
 
     # === 1. Подготовка / создание сессии ===
+    # Критично: если пользователь залогинен, привязываем сессию к user_id.
+    # Без этого Dossier/ReflectionAgent не работают — pipeline будет считать
+    # залогиненного юзера гостем (см. pipeline.py: `if user_id:`).
     session_id = request.session_id or str(uuid4())
     session = await _get_or_create_session(
         db,
         session_id=session_id,
+        user_id=current_user.id if current_user else None,
         guest_id=request.guest_id,
     )
 
@@ -272,15 +276,26 @@ async def _get_or_create_session(
     db: AsyncSession,
     *,
     session_id: str,
+    user_id: str | None,
     guest_id: str | None,
 ) -> ChatSession:
-    """Получить существующую сессию или создать новую."""
+    """Получить существующую сессию или создать новую.
+
+    Если сессия существует, но пришёл залогиненный `user_id` при
+    `session.user_id is None` — привязываем сессию к юзеру. Это покрывает
+    случай, когда гость начал сессию, потом залогинился — следующий же
+    `/api/chat` правильно свяжет сессию с аккаунтом (до этого нужно было
+    дождаться `POST /api/sessions/migrate`).
+    """
     existing = await db.get(ChatSession, session_id)
     if existing is not None:
+        if user_id and existing.user_id is None:
+            existing.user_id = user_id
         return existing
 
     new_session = ChatSession(
         id=session_id,
+        user_id=user_id,
         guest_id=guest_id,
         crisis_level_max="normal",
         message_count=0,
