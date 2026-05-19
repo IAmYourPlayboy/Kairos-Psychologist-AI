@@ -10,6 +10,13 @@ A careful support space for moments when people need to talk, reflect on their e
 <a href="./README.en.md"><img alt="EN" src="https://img.shields.io/badge/README-EN-111827?style=for-the-badge"></a>
 <a href="./README.zh.md"><img alt="中文" src="https://img.shields.io/badge/README-ZH-d97706?style=for-the-badge"></a>
 
+<br><br>
+
+<img alt="Python" src="https://img.shields.io/badge/Python-73.0%25-3776ab?style=flat-square&logo=python&logoColor=white">
+<img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-17.5%25-3178c6?style=flat-square&logo=typescript&logoColor=white">
+<img alt="HTML" src="https://img.shields.io/badge/HTML-4.7%25-e34f26?style=flat-square&logo=html5&logoColor=white">
+<img alt="CSS" src="https://img.shields.io/badge/CSS-4.2%25-663399?style=flat-square&logo=css">
+
 </div>
 
 ## About
