@@ -6,9 +6,9 @@
 
 Сервис для бережной эмоциональной помощи в моменты, когда человеку нужно выговориться, структурировать состояние и получить мягкую поддержку рядом.
 
-<a href="./README.md"><img alt="RU" src="https://img.shields.io/badge/README-RU-2f80ed?style=for-the-badge"></a>
-<a href="./README.en.md"><img alt="EN" src="https://img.shields.io/badge/README-EN-111827?style=for-the-badge"></a>
-<a href="./README.zh.md"><img alt="中文" src="https://img.shields.io/badge/README-ZH-d97706?style=for-the-badge"></a>
+<a href="./README.md"><img alt="README RU" src="https://img.shields.io/badge/README-RU-2F80ED?style=flat">
+<a href="./README.en.md"><img alt="README EN" src="https://img.shields.io/badge/README-EN-111827?style=flat">
+<a href="./README.zh.md"><img alt="README ZH" src="https://img.shields.io/badge/README-ZH-D97706?style=flat">
 
 <br><br>
 
@@ -17,6 +17,7 @@
 <img alt="HTML" src="https://img.shields.io/badge/HTML-4.7%25-e34f26?style=flat-square&logo=html5&logoColor=white">
 <img alt="CSS" src="https://img.shields.io/badge/CSS-4.2%25-663399?style=flat-square&logo=css">
 
+![Stars](https://img.shields.io/badge/stars-welcome-FACC15?style=plastic)
 </div>
 
 ## О проекте
